@@ -379,14 +379,18 @@ function backToEntry(){
 
 // ===== CUSTOMER INIT =====
 function initCustomer(){
-  currentUser = JSON.parse(localStorage.getItem('sc_currentUser')||'null');
-  renderCats();
-  renderProds('all');
+  currentUser=JSON.parse(localStorage.getItem('sc_currentUser')||'null');
+  renderCats();renderProds('all');
   initSwipe('cwrapper','cpages','cdots');
   document.getElementById('aisend').addEventListener('click',aiChat);
   document.getElementById('aiin').addEventListener('keydown',function(e){if(e.key==='Enter')aiChat()});
   updateAccountUI();
   if(currentUser){savedToast('欢迎回来，'+currentUser.name)}
+  // Event delegation: capture clicks on buy buttons
+  document.getElementById('prodList').addEventListener('click',function(e){
+    var btn=e.target.closest('.buy-btn');
+    if(btn){var pid=parseInt(btn.getAttribute('data-pid'));if(!isNaN(pid))buyProduct(pid)}
+  });
 }
 
 function renderCats(){
@@ -408,7 +412,7 @@ function renderProds(cid){
   var prods=cid==='all'?PRODUCTS:PRODUCTS.filter(function(p){return p.cat===cid});
   var h='';
   prods.forEach(function(p){
-    h+='<div class="prod-card"><div class="pn">'+p.img+' '+p.name+'</div><div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" onclick="buyProduct('+p.id+')">购买</button></div></div>';
+    h+='<div class="prod-card"><div class="pn">'+p.img+' '+p.name+'</div><div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" data-pid="'+p.id+'">购买</button></div></div>';
   });
   if(!prods.length)h='<div style="color:#888;text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
@@ -418,16 +422,16 @@ function renderProds(cid){
 var pendingOrder=null;
 
 function buyProduct(pid){
-  if(!currentUser){alert('请先在第三页登录/注册');return}
+  if(!currentUser){alert('请先在第三页登录注册');return}
   var p=PRODUCTS.find(function(x){return x.id===pid});if(!p)return
   pendingOrder={id:Date.now(),pid:pid,pname:p.name,price:p.price,img:p.img,userId:currentUser.phone,status:'paid',tracking:'',time:new Date().toLocaleString()}
-  document.getElementById('payInfo').textContent=p.img+' '+p.name
-  document.getElementById('payPrice').textContent='¥'+p.price.toLocaleString()
+  var el=document.getElementById('payInfo');if(el)el.textContent=p.img+' '+p.name
+  el=document.getElementById('payPrice');if(el)el.textContent='¥'+p.price.toLocaleString()
   var qr=localStorage.getItem('sc_payment_qr')||''
-  if(qr){document.getElementById('payQRPlaceholder').style.display='none';document.getElementById('payQRImg').src=qr;document.getElementById('payQRImg').style.display='block'}
-  else{document.getElementById('payQRPlaceholder').style.display='block';document.getElementById('payQRImg').style.display='none'}
-  document.getElementById('payConfirmBtn').style.display='block'
-  document.getElementById('payModal').style.display='flex'
+  el=document.getElementById('payQRPlaceholder');if(el)el.style.display=qr?'none':'block'
+  el=document.getElementById('payQRImg');if(el){el.src=qr;el.style.display=qr?'block':'none'}
+  el=document.getElementById('payConfirmBtn');if(el)el.style.display='block'
+  el=document.getElementById('payModal');if(el){el.style.display='flex'}
 }
 
 function confirmPayment(){

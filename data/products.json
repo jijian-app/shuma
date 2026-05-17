@@ -1,17 +1,122 @@
 [
-  {"id":1,"cat":"smartphone","name":"小米15","spec":"骁龙8至尊版 / 6.36\" 1.5K直屏 / 5400mAh / 徕卡三摄","price":4499,"img":"📱"},
-  {"id":2,"cat":"smartphone","name":"iPhone 16 Pro","spec":"A18 Pro / 6.3\" OLED / 48MP主摄 / 钛金属","price":7999,"img":"📱"},
-  {"id":3,"cat":"smartphone","name":"华为Mate 70 Pro","spec":"麒麟9020 / 6.8\" LTPO / 卫星通信 / 鸿蒙OS","price":6499,"img":"📱"},
-  {"id":4,"cat":"smartphone","name":"iQOO 13","spec":"骁龙8至尊版 / 2K直屏 / 6150mAh / 120W快充","price":3999,"img":"📱"},
-  {"id":5,"cat":"laptop","name":"联想拯救者Y9000P","spec":"i9-14900HX / RTX4060 / 16\" 2.5K 240Hz","price":8999,"img":"💻"},
-  {"id":6,"cat":"laptop","name":"MacBook Air M3","spec":"M3芯片 / 13.6\" Liquid Retina / 15h续航","price":7999,"img":"💻"},
-  {"id":7,"cat":"laptop","name":"Redmi Book Pro 15","spec":"R7-7840HS / 15.6\" 3.2K 120Hz / 金属机身","price":5999,"img":"💻"},
-  {"id":8,"cat":"tablet","name":"iPad Air M2","spec":"M2芯片 / 11\" Liquid Retina / 支持Apple Pencil","price":4799,"img":"📋"},
-  {"id":9,"cat":"tablet","name":"华为MatePad Pro","spec":"麒麟9000S / 13.2\" OLED / 鸿蒙OS","price":4299,"img":"📋"},
-  {"id":10,"cat":"earphone","name":"AirPods Pro 2","spec":"H2芯片 / ANC主动降噪 / MagSafe充电","price":1899,"img":"🎧"},
-  {"id":11,"cat":"earphone","name":"华为FreeBuds Pro 3","spec":"麒麟A2 / 静谧通话 / 星闪连接","price":1499,"img":"🎧"},
-  {"id":12,"cat":"wearable","name":"Apple Watch S9","spec":"S9芯片 / 全天候视网膜 / 血氧监测","price":2999,"img":"⌚"},
-  {"id":13,"cat":"wearable","name":"小米手环8 Pro","spec":"1.74\" AMOLED / 14天续航 / 150+运动","price":399,"img":"⌚"},
-  {"id":14,"cat":"accessory","name":"小米充电宝 20000mAh","spec":"20000mAh / 50W双向快充 / Type-C","price":199,"img":"🔌"},
-  {"id":15,"cat":"accessory","name":"Anker氮化镓65W","spec":"65W / GaN / 双口快充 / 折叠插脚","price":149,"img":"🔌"}
+  {
+    "id": 1,
+    "cat": "smartphone",
+    "name": "小米15",
+    "spec": "骁龙8至尊版 / 6.36\" 1.5K直屏 / 5400mAh / 徕卡三摄",
+    "price": 4499,
+    "img": "📱"
+  },
+  {
+    "id": 2,
+    "cat": "smartphone",
+    "name": "iPhone 16 Pro",
+    "spec": "A18 Pro / 6.3\" OLED / 48MP主摄 / 钛金属",
+    "price": 7999,
+    "img": "📱"
+  },
+  {
+    "id": 3,
+    "cat": "smartphone",
+    "name": "华为Mate 70 Pro",
+    "spec": "麒麟9020 / 6.8\" LTPO / 卫星通信 / 鸿蒙OS",
+    "price": 6499,
+    "img": "📱"
+  },
+  {
+    "id": 4,
+    "cat": "smartphone",
+    "name": "iQOO 13",
+    "spec": "骁龙8至尊版 / 2K直屏 / 6150mAh / 120W快充",
+    "price": 3999,
+    "img": "📱"
+  },
+  {
+    "id": 5,
+    "cat": "laptop",
+    "name": "联想拯救者Y9000P",
+    "spec": "i9-14900HX / RTX4060 / 16\" 2.5K 240Hz",
+    "price": 8999,
+    "img": "💻"
+  },
+  {
+    "id": 6,
+    "cat": "laptop",
+    "name": "MacBook Air M3",
+    "spec": "M3芯片 / 13.6\" Liquid Retina / 15h续航",
+    "price": 7999,
+    "img": "💻"
+  },
+  {
+    "id": 7,
+    "cat": "laptop",
+    "name": "Redmi Book Pro 15",
+    "spec": "R7-7840HS / 15.6\" 3.2K 120Hz / 金属机身",
+    "price": 5999,
+    "img": "💻"
+  },
+  {
+    "id": 8,
+    "cat": "tablet",
+    "name": "iPad Air M2",
+    "spec": "M2芯片 / 11\" Liquid Retina / 支持Apple Pencil",
+    "price": 4799,
+    "img": "📋"
+  },
+  {
+    "id": 9,
+    "cat": "tablet",
+    "name": "华为MatePad Pro",
+    "spec": "麒麟9000S / 13.2\" OLED / 鸿蒙OS",
+    "price": 4299,
+    "img": "📋"
+  },
+  {
+    "id": 10,
+    "cat": "earphone",
+    "name": "AirPods Pro 2",
+    "spec": "H2芯片 / ANC主动降噪 / MagSafe充电",
+    "price": 1899,
+    "img": "🎧"
+  },
+  {
+    "id": 11,
+    "cat": "earphone",
+    "name": "华为FreeBuds Pro 3",
+    "spec": "麒麟A2 / 静谧通话 / 星闪连接",
+    "price": 1499,
+    "img": "🎧"
+  },
+  {
+    "id": 12,
+    "cat": "wearable",
+    "name": "Apple Watch S9",
+    "spec": "S9芯片 / 全天候视网膜 / 血氧监测",
+    "price": 2999,
+    "img": "⌚"
+  },
+  {
+    "id": 13,
+    "cat": "wearable",
+    "name": "小米手环8 Pro",
+    "spec": "1.74\" AMOLED / 14天续航 / 150+运动",
+    "price": 399,
+    "img": "⌚"
+  },
+  {
+    "id": 14,
+    "cat": "accessory",
+    "name": "小米充电宝 20000mAh",
+    "spec": "20000mAh / 50W双向快充 / Type-C",
+    "price": 199,
+    "img": "🔌"
+  },
+  {
+    "id": 15,
+    "cat": "accessory",
+    "name": "Anker氮化镓65W",
+    "spec": "65W / GaN / 双口快充 / 折叠插脚",
+    "price": 149,
+    "img": "🔌"
+  }
 ]

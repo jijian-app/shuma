@@ -204,10 +204,12 @@ select{appearance:none;-webkit-appearance:none}
       <div class="stat-cards">
         <div class="stat-card"><div class="sv" id="statProd">0</div><div class="sl">商品数量</div></div>
         <div class="stat-card"><div class="sv" id="statOrder">0</div><div class="sl">总订单</div></div>
+        <div class="stat-card"><div class="sv" id="statUser">0</div><div class="sl">注册用户</div></div>
       </div>
       <div class="tabs">
         <div class="tab on" onclick="merchTab('products',this)">商品管理</div>
         <div class="tab" onclick="merchTab('orders',this)">订单管理</div>
+        <div class="tab" onclick="merchTab('users',this)">用户管理</div>
       </div>
       <div id="merchProducts">
         <div style="display:flex;gap:10px;margin-bottom:14px">
@@ -217,6 +219,13 @@ select{appearance:none;-webkit-appearance:none}
       </div>
       <div id="merchOrders" class="hidden">
         <div id="merchOrderList"></div>
+      </div>
+      <div id="merchUsers" class="hidden">
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <button class="btn btn-outline" style="margin:0;flex:1" onclick="exportUsers()">📥 导出用户数据</button>
+          <button class="btn btn-outline" style="margin:0;flex:1;border-color:#888;color:#888" onclick="clearUsers()">清空</button>
+        </div>
+        <div id="merchUserList"></div>
       </div>
     </div>
   </div>
@@ -478,6 +487,7 @@ function refreshMerchant(){
   document.getElementById('statOrder').textContent=ORDERS.length;
   renderMerchProds();
   renderMerchOrders();
+  renderMerchUsers();
 }
 
 function merchTab(t,el){
@@ -485,6 +495,7 @@ function merchTab(t,el){
   el.classList.add('on');
   document.getElementById('merchProducts').classList.toggle('hidden',t!=='products');
   document.getElementById('merchOrders').classList.toggle('hidden',t!=='orders');
+  document.getElementById('merchUsers').classList.toggle('hidden',t!=='users');
 }
 
 function renderMerchProds(){
@@ -574,6 +585,34 @@ function doTracking(oid){
 }
 
 function closeModal(){document.getElementById('modal').style.display='none'}
+
+// ==== USER MANAGEMENT ====
+function renderMerchUsers(){
+  var h='';
+  if(!USERS.length){h='<div style="color:#888;text-align:center;padding:30px">暂无注册用户</div>'}
+  else{
+    h+='<div style="color:#888;font-size:12px;margin-bottom:8px">共 '+USERS.length+' 位注册用户</div>';
+    USERS.forEach(function(u,i){
+      h+='<div class="order-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600">👤 '+u.name+'</div><div style="font-size:13px;color:#aaa">📱 '+u.phone+'</div><div style="font-size:13px;color:#aaa">🔑 '+u.pass+'</div></div><span style="font-size:11px;color:#666">#'+(i+1)+'</span></div></div>';
+    });
+  }
+  document.getElementById('merchUserList').innerHTML=h;
+}
+
+function exportUsers(){
+  if(!USERS.length){alert('无用户数据可导出');return}
+  var txt='数码城 · 注册用户数据\n导出时间: '+new Date().toLocaleString()+'\n共 '+USERS.length+' 人\n'+'='.repeat(40)+'\n\n';
+  USERS.forEach(function(u,i){
+    txt+=(i+1)+'. 姓名: '+u.name+'\n   手机: '+u.phone+'\n   密码: '+u.pass+'\n\n';
+  });
+  var blob=new Blob([txt],{type:'text/plain'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='数码城_用户数据_'+new Date().toISOString().slice(0,10)+'.txt';a.click();
+}
+
+function clearUsers(){
+  if(!confirm('确定清空所有用户数据？此操作不可恢复！'))return;
+  USERS=[];saveUsers();refreshMerchant();
+}
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
 
 // Init merchant login screen

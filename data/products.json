@@ -5,7 +5,7 @@
     "name": "小米15",
     "spec": "骁龙8至尊版 / 6.36\" 1.5K直屏 / 5400mAh / 徕卡三摄",
     "price": 4499,
-    "img": "5"
+    "img": "📱"
   },
   {
     "id": 2,
@@ -98,25 +98,25 @@
   {
     "id": 13,
     "cat": "wearable",
-    "name": "小米手环8 Pro",
-    "spec": "1.74\" AMOLED / 14天续航 / 150+运动",
-    "price": 399,
+    "name": "华为Watch GT 4",
+    "spec": "麒麟A1 / 14天续航 / 100+运动模式",
+    "price": 1488,
     "img": "⌚"
   },
   {
     "id": 14,
     "cat": "accessory",
-    "name": "小米充电宝 20000mAh",
-    "spec": "20000mAh / 50W双向快充 / Type-C",
-    "price": 199,
+    "name": "Anker 65W充电器",
+    "spec": "GaN氮化镓 / 三口快充 / 折叠插脚",
+    "price": 149,
     "img": "🔌"
   },
   {
     "id": 15,
     "cat": "accessory",
-    "name": "Anker氮化镓65W",
-    "spec": "65W / GaN / 双口快充 / 折叠插脚",
-    "price": 149,
+    "name": "绿联Type-C扩展坞",
+    "spec": "7合1 / 4K HDMI / USB3.0 / SD读卡",
+    "price": 199,
     "img": "🔌"
   }
 ]

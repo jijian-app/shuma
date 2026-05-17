@@ -217,6 +217,7 @@ select{appearance:none;-webkit-appearance:none}
         <div class="tab" onclick="merchTab('orders',this)">订单管理</div>
         <div class="tab" onclick="merchTab('users',this)">用户管理</div>
         <div class="tab" onclick="merchTab('profiles',this)">客户资料</div>
+        <div class="tab" onclick="merchTab('payment',this)">支付设置</div>
       </div>
       <div id="merchProducts">
         <div style="display:flex;gap:10px;margin-bottom:14px">
@@ -238,6 +239,18 @@ select{appearance:none;-webkit-appearance:none}
         <div class="subtitle">客户填写的收货地址和联系方式</div>
         <div id="merchProfileList"></div>
       </div>
+      <div id="merchPayment" class="hidden">
+        <div class="card">
+          <h3 style="text-align:center;letter-spacing:2px;font-weight:400;margin-bottom:14px">收款码设置</h3>
+          <div class="subtitle">上传你的微信/支付宝收款码图片</div>
+          <input type="text" id="qrUrl" placeholder="收款码图片URL（https://... 或 data:image/...）">
+          <div class="subtitle" style="margin:8px 0">或上传图片文件</div>
+          <input type="file" id="qrFile" accept="image/*" onchange="handleQRFile(this)" style="padding:10px">
+          <div id="qrPreview" style="text-align:center;margin:10px 0"></div>
+          <button class="btn" onclick="savePaymentQR()" style="margin-top:8px">保存收款码</button>
+          <div class="subtitle" style="margin-top:12px">提示：将微信/支付宝收款码截图后上传。客户购买时会看到此码扫码支付。</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -247,6 +260,21 @@ select{appearance:none;-webkit-appearance:none}
 <!-- Modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal" id="modalContent"></div>
+</div>
+<!-- Payment Modal -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="text-align:center">
+    <h3 style="letter-spacing:2px;font-weight:400;margin-bottom:10px">扫码支付</h3>
+    <div class="subtitle" id="payInfo"></div>
+    <div style="margin:12px 0;font-weight:700;font-size:20px" id="payPrice"></div>
+    <div id="payQR" style="margin:10px auto;max-width:220px;min-height:80px;border:1px solid #333;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#888;overflow:hidden">
+      <span id="payQRPlaceholder">暂无收款码</span>
+      <img id="payQRImg" style="display:none;max-width:100%" src="">
+    </div>
+    <div class="subtitle" style="margin:8px 0">请用微信/支付宝扫码支付</div>
+    <button class="btn" id="payConfirmBtn" onclick="confirmPayment()">我已支付</button>
+    <button class="btn btn-outline" style="margin-top:6px" onclick="closePayModal()">取消</button>
+  </div>
 </div>
 
 <script>
@@ -387,15 +415,48 @@ function renderProds(cid){
 }
 
 // ===== BUY =====
+var pendingOrder=null;
+
 function buyProduct(pid){
-  if(!currentUser){alert('请先在第三页登录/注册');return;}
-  var p=PRODUCTS.find(function(x){return x.id===pid});
-  if(!p)return;
-  var order={id:Date.now(),pid:pid,pname:p.name,price:p.price,img:p.img,userId:currentUser.phone,status:'pending',tracking:'',time:new Date().toLocaleString()};
-  ORDERS.unshift(order);saveOrders();
-  alert('已下单：'+p.name+' ¥'+p.price.toLocaleString()+'\n可在第三页查看订单');
-  renderOrders();
+  if(!currentUser){alert('请先在第三页登录/注册');return}
+  var p=PRODUCTS.find(function(x){return x.id===pid});if(!p)return
+  pendingOrder={id:Date.now(),pid:pid,pname:p.name,price:p.price,img:p.img,userId:currentUser.phone,status:'paid',tracking:'',time:new Date().toLocaleString()}
+  document.getElementById('payInfo').textContent=p.img+' '+p.name
+  document.getElementById('payPrice').textContent='¥'+p.price.toLocaleString()
+  var qr=localStorage.getItem('sc_payment_qr')||''
+  if(qr){document.getElementById('payQRPlaceholder').style.display='none';document.getElementById('payQRImg').src=qr;document.getElementById('payQRImg').style.display='block'}
+  else{document.getElementById('payQRPlaceholder').style.display='block';document.getElementById('payQRImg').style.display='none'}
+  document.getElementById('payConfirmBtn').style.display='block'
+  document.getElementById('payModal').style.display='flex'
 }
+
+function confirmPayment(){
+  if(!pendingOrder)return
+  pendingOrder.status='paid';ORDERS.unshift(pendingOrder);saveOrders()
+  pendingOrder=null;closePayModal();renderOrders()
+  alert('支付确认成功！商家将尽快发货')
+}
+
+function closePayModal(){document.getElementById('payModal').style.display='none'}
+
+function handleQRFile(input){
+  var f=input.files[0];if(!f)return
+  var r=new FileReader()
+  r.onload=function(e){document.getElementById('qrUrl').value=e.target.result;document.getElementById('qrPreview').innerHTML='<img src="'+e.target.result+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'}
+  r.readAsDataURL(f)
+}
+
+function savePaymentQR(){
+  var url=document.getElementById('qrUrl').value.trim()
+  if(!url){alert('请粘贴收款码URL或上传图片');return}
+  localStorage.setItem('sc_payment_qr',url)
+  savedToast('收款码已保存')
+}
+
+(function(){
+  var qr=localStorage.getItem('sc_payment_qr')
+  if(qr){document.getElementById('qrUrl').value=qr;document.getElementById('qrPreview').innerHTML='<img src="'+qr+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'}
+})();
 
 // ===== AI CHAT =====
 function aiChat(){
@@ -571,6 +632,7 @@ function merchTab(t,el){
   document.getElementById('merchOrders').classList.toggle('hidden',t!=='orders');
   document.getElementById('merchUsers').classList.toggle('hidden',t!=='users');
   document.getElementById('merchProfiles').classList.toggle('hidden',t!=='profiles');
+  document.getElementById('merchPayment').classList.toggle('hidden',t!=='payment');
 }
 
 function renderMerchProds(){

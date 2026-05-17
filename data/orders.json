@@ -6,9 +6,11 @@
     "price": 4499,
     "img": "📱",
     "userId": "13025554942",
-    "status": "paid",
-    "tracking": "",
-    "time": "2026/5/18 05:18:36"
+    "status": "picked",
+    "tracking": "222",
+    "time": "2026/5/18 05:18:36",
+    "courier": "shunfeng",
+    "courierName": "顺丰速运"
   },
   {
     "id": 1779050194062,

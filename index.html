@@ -244,9 +244,23 @@ var PRODUCTS = JSON.parse(localStorage.getItem('sc_products')||'[]');
 var ORDERS = JSON.parse(localStorage.getItem('sc_orders')||'[]');
 var USERS = JSON.parse(localStorage.getItem('sc_users')||'[]');
 var currentUser = JSON.parse(localStorage.getItem('sc_currentUser')||'null');
-var MERCHANT_LOGGED = false;
+var MERCHANT_LOGGED = localStorage.getItem('sc_merchant_logged')==='1';
 var INVITE_CODE = 'Qq223345678';
 var currentCat = 'all';
+var LAST_SAVE = localStorage.getItem('sc_last_save')||'';
+
+// Cloud sync: try loading products from server first
+(function(){
+  fetch('products.json?'+Date.now())
+    .then(function(r){return r.json()})
+    .then(function(data){
+      PRODUCTS=data;saveProducts();
+      localStorage.setItem('sc_last_sync',new Date().toLocaleString());
+      if(typeof renderProds==='function')renderProds(currentCat);
+      if(typeof refreshMerchant==='function')refreshMerchant();
+    })
+    .catch(function(){});
+})();
 
 // Default products
 var defaultProducts = [
@@ -279,9 +293,17 @@ var categories = [
   {id:'accessory',name:'配件',icon:'🔌'}
 ];
 
-function saveProducts(){localStorage.setItem('sc_products',JSON.stringify(PRODUCTS))}
+function saveProducts(){localStorage.setItem('sc_products',JSON.stringify(PRODUCTS));localStorage.setItem('sc_last_save',new Date().toLocaleString())}
 function saveOrders(){localStorage.setItem('sc_orders',JSON.stringify(ORDERS))}
 function saveUsers(){localStorage.setItem('sc_users',JSON.stringify(USERS))}
+
+function savedToast(msg){
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:8px 20px;border-radius:20px;font-size:13px;z-index:999;animation:fadeIn .3s';
+  t.textContent='✓ '+(msg||'已保存·重启后保留');
+  document.body.appendChild(t);
+  setTimeout(function(){t.style.transition='opacity .5s';t.style.opacity='0';setTimeout(function(){t.remove()},500)},1800);
+}
 
 // ===== ENTRY =====
 function enterPlatform(type){
@@ -301,10 +323,19 @@ function backToEntry(){
   document.getElementById('customerScreen').classList.add('hidden');
   document.getElementById('merchantScreen').classList.add('hidden');
   document.getElementById('entryScreen').classList.remove('hidden');
-  MERCHANT_LOGGED=false;
+  MERCHANT_LOGGED=false;localStorage.setItem('sc_merchant_logged','0');
   document.getElementById('merchLogin').style.display='flex';
   document.getElementById('merchDash').classList.add('hidden');
 }
+
+// Check if merchant was already logged in
+(function(){
+  if(localStorage.getItem('sc_merchant_logged')==='1'){
+    document.getElementById('merchLogin').style.display='none';
+    document.getElementById('merchDash').classList.remove('hidden');
+    MERCHANT_LOGGED=true;refreshMerchant();
+  }
+})();
 
 // ===== CUSTOMER INIT =====
 function initCustomer(){
@@ -315,6 +346,7 @@ function initCustomer(){
   document.getElementById('aisend').addEventListener('click',aiChat);
   document.getElementById('aiin').addEventListener('keydown',function(e){if(e.key==='Enter')aiChat()});
   updateAccountUI();
+  if(currentUser){savedToast('欢迎回来，'+currentUser.name)}
 }
 
 function renderCats(){
@@ -474,13 +506,19 @@ function initSwipe(wrapperId,pagesId,dotsId){
 function merchantLogin(){
   var code=document.getElementById('inviteCode').value.trim();
   if(code!==INVITE_CODE){alert('邀请码错误');return}
-  MERCHANT_LOGGED=true;
+  MERCHANT_LOGGED=true;localStorage.setItem('sc_merchant_logged','1');
   document.getElementById('merchLogin').style.display='none';
   document.getElementById('merchDash').classList.remove('hidden');
   refreshMerchant();
+  savedToast('商家登录成功');
 }
 
-function merchantLogout(){MERCHANT_LOGGED=false;document.getElementById('merchDash').classList.add('hidden');document.getElementById('merchLogin').style.display='flex';document.getElementById('inviteCode').value=''}
+function merchantLogout(){
+  MERCHANT_LOGGED=false;localStorage.setItem('sc_merchant_logged','0');
+  document.getElementById('merchDash').classList.add('hidden');
+  document.getElementById('merchLogin').style.display='flex';
+  document.getElementById('inviteCode').value='';
+}
 
 function refreshMerchant(){
   document.getElementById('statProd').textContent=PRODUCTS.length;

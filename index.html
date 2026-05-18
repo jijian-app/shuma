@@ -156,6 +156,11 @@ select{appearance:none;-webkit-appearance:none}
 .img-num{font-size:11px;color:#555;min-width:20px;text-align:center}
 .img-row input{flex:1;margin-bottom:0!important;padding:8px 10px;font-size:12px}
 .img-preview{width:44px;height:44px;border-radius:6px;overflow:hidden;background:#111;border:1px solid #222;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.img-file-input{display:none}
+.img-pick-btn{padding:6px 12px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s;flex-shrink:0}
+.img-pick-btn:active{background:#333}
+.img-clear{font-size:14px;color:#f66;cursor:pointer;padding:2px 6px;flex-shrink:0}
+.img-loading{font-size:10px;color:#888}
 /* Revenue */
 .rev-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .rev-stat{background:#111;border:1px solid #222;border-radius:10px;padding:12px;text-align:center}
@@ -1402,6 +1407,27 @@ function renderMerchProds(){
   document.getElementById('merchProdList').innerHTML=h;
 }
 
+// ===== IMAGE COMPRESSION =====
+function compressImage(file, callback, maxW, quality){
+  maxW = maxW || 300;
+  quality = quality || 0.6;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function showAddProduct(){
   var copt=categories.filter(function(c){return c.id!=='all'}).map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>'}).join('');
   var h='<h3>添加商品</h3><span class="close" onclick="closeModal()">✕</span>';
@@ -1410,41 +1436,53 @@ function showAddProduct(){
   h+='<input id="addSpec" placeholder="规格描述（详细规格，支持多行）">';
   h+='<input id="addPrice" type="number" placeholder="价格（元）">';
   h+='<input id="addImg" placeholder="图标 emoji（如 📱）">';
-  h+='<div class="img-fields-label">📷 商品图片（粘贴图片链接，最多8张）</div>';
+  h+='<div class="img-fields-label">📷 商品图片（从相册选择，最多8张）</div>';
   h+='<div class="img-fields" id="addImgFields">';
   for(var i=0;i<8;i++){
-    h+='<div class="img-row"><span class="img-num">'+(i+1)+'</span><input id="addImgUrl'+i+'" placeholder="图片'+(i+1)+'链接 https://..."><div class="img-preview" id="addPreview'+i+'"></div></div>';
+    h+='<div class="img-row">';
+    h+='<span class="img-num">'+(i+1)+'</span>';
+    h+='<input type="hidden" id="addImgData'+i+'" value="">';
+    h+='<input type="file" accept="image/*" id="addImgFile'+i+'" class="img-file-input" onchange="handleImgSelect(this,'+i+',\'add\')">';
+    h+='<label for="addImgFile'+i+'" class="img-pick-btn">📷 选图</label>';
+    h+='<div class="img-preview" id="addPreview'+i+'"></div>';
+    h+='<span class="img-clear" onclick="clearImg('+i+',\'add\')" style="display:none" id="addClear'+i+'">✕</span>';
+    h+='</div>';
   }
   h+='</div>';
   h+='<button class="btn" onclick="doAddProduct()">确认添加</button>';
   document.getElementById('modalContent').innerHTML=h;
   document.getElementById('modal').style.display='flex';
-  // Bind image preview
-  for(var i=0;i<8;i++){
-    (function(j){
-      document.getElementById('addImgUrl'+j).addEventListener('input',function(){
-        updateImgPreview('addImgUrl'+j,'addPreview'+j);
-      });
-    })(i);
-  }
 }
 
-function updateImgPreview(inputId, previewId){
-  var val = document.getElementById(inputId).value.trim();
-  var preview = document.getElementById(previewId);
-  if(val && val.match(/^https?:\/\/.+/)){
-    preview.innerHTML = '<img src="'+val+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px" onerror="this.parentElement.innerHTML=\'❌\'">';
-  } else {
-    preview.innerHTML = '';
-  }
+function handleImgSelect(input, index, prefix){
+  var file = input.files[0];
+  if(!file) return;
+  if(file.size > 10*1024*1024){ alert('图片不能超过10MB'); return; }
+  var preview = document.getElementById(prefix+'Preview'+index);
+  var clearBtn = document.getElementById(prefix+'Clear'+index);
+  var dataInput = document.getElementById(prefix+'ImgData'+index);
+  preview.innerHTML = '<div class="img-loading">压缩中...</div>';
+  compressImage(file, function(dataUri){
+    dataInput.value = dataUri;
+    preview.innerHTML = '<img src="'+dataUri+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px">';
+    if(clearBtn) clearBtn.style.display = 'inline';
+  });
+}
+
+function clearImg(index, prefix){
+  document.getElementById(prefix+'ImgData'+index).value = '';
+  document.getElementById(prefix+'Preview'+index).innerHTML = '';
+  document.getElementById(prefix+'Clear'+index).style.display = 'none';
+  var fileInput = document.getElementById(prefix+'ImgFile'+index);
+  if(fileInput) fileInput.value = '';
 }
 
 function doAddProduct(){
   var img = document.getElementById('addImg').value.trim() || '📦';
   var images = [];
   for(var i=0;i<8;i++){
-    var url = document.getElementById('addImgUrl'+i).value.trim();
-    if(url) images.push(url);
+    var data = document.getElementById('addImgData'+i).value;
+    if(data) images.push(data);
   }
   var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images};
   if(!p.name||!p.price){alert('请填写商品名称和价格');return}
@@ -1453,27 +1491,23 @@ function doAddProduct(){
 
 function makeImageFieldsHTML(images, prefix){
   images = images || [];
-  var h='<div class="img-fields-label">📷 商品图片（粘贴图片链接，最多8张）</div>';
+  var h='<div class="img-fields-label">📷 商品图片（从相册选择，最多8张）</div>';
   h+='<div class="img-fields">';
   for(var i=0;i<8;i++){
     var val = images[i] || '';
-    h+='<div class="img-row"><span class="img-num">'+(i+1)+'</span><input id="'+prefix+i+'" placeholder="图片'+(i+1)+'链接 https://..." value="'+val.replace(/"/g,'&quot;')+'"><div class="img-preview" id="'+prefix+'preview'+i+'">'+(val?'<img src="'+val+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px">':'')+'</div></div>';
+    var previewHtml = val ? '<img src="'+val+'" style="width:44px;height:44px;object-fit:cover;border-radius:6px">' : '';
+    var clearStyle = val ? '' : 'style="display:none"';
+    h+='<div class="img-row">';
+    h+='<span class="img-num">'+(i+1)+'</span>';
+    h+='<input type="hidden" id="'+prefix+'ImgData'+i+'" value="'+val.replace(/"/g,'&quot;')+'">';
+    h+='<input type="file" accept="image/*" id="'+prefix+'ImgFile'+i+'" class="img-file-input" onchange="handleImgSelect(this,'+i+',\''+prefix+'\')">';
+    h+='<label for="'+prefix+'ImgFile'+i+'" class="img-pick-btn">📷 选图</label>';
+    h+='<div class="img-preview" id="'+prefix+'Preview'+i+'">'+previewHtml+'</div>';
+    h+='<span class="img-clear" onclick="clearImg('+i+',\''+prefix+'\')" id="'+prefix+'Clear'+i+'" '+clearStyle+'>✕</span>';
+    h+='</div>';
   }
   h+='</div>';
   return h;
-}
-
-function bindImagePreview(prefix){
-  for(var i=0;i<8;i++){
-    (function(j){
-      var el = document.getElementById(prefix+j);
-      if(el){
-        el.addEventListener('input',function(){
-          updateImgPreview(prefix+j, prefix+'preview'+j);
-        });
-      }
-    })(i);
-  }
 }
 
 function editProduct(pid){
@@ -1485,11 +1519,10 @@ function editProduct(pid){
   h+='<input id="editSpec" value="'+p.spec.replace(/"/g,'&quot;')+'" placeholder="规格描述（支持详细多行说明）">';
   h+='<input id="editPrice" type="number" value="'+p.price+'">';
   h+='<input id="editImg" value="'+(p.img||'')+'" placeholder="图标 emoji">';
-  h+=makeImageFieldsHTML(p.images||[], 'editImgUrl');
+  h+=makeImageFieldsHTML(p.images||[], 'editImg');
   h+='<button class="btn" onclick="doEditProduct('+pid+')">保存修改</button>';
   document.getElementById('modalContent').innerHTML=h;
   document.getElementById('modal').style.display='flex';
-  bindImagePreview('editImgUrl');
 }
 
 function doEditProduct(pid){
@@ -1499,8 +1532,8 @@ function doEditProduct(pid){
   p.img=document.getElementById('editImg').value.trim()||p.img;
   var images = [];
   for(var i=0;i<8;i++){
-    var url = document.getElementById('editImgUrl'+i).value.trim();
-    if(url) images.push(url);
+    var data = document.getElementById('editImgImgData'+i).value;
+    if(data) images.push(data);
   }
   p.images = images;
   saveProducts();closeModal();refreshMerchant();

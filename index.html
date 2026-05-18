@@ -138,6 +138,24 @@ select{appearance:none;-webkit-appearance:none}
 /* Product detail */
 .prod-detail-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .prod-detail-tag{padding:4px 10px;background:#1a1a1a;border-radius:10px;font-size:11px;color:#aaa}
+/* Product images */
+.prod-images{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.prod-images img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #222;flex-shrink:0}
+.prod-images .no-img{font-size:11px;color:#555;padding:10px 0}
+/* Product detail gallery */
+.pd-gallery{display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;-webkit-overflow-scrolling:touch;justify-content:center;flex-wrap:wrap}
+.pd-gallery img{width:100%;max-width:320px;max-height:280px;object-fit:contain;border-radius:12px;border:1px solid #222}
+.pd-gallery.thumb img{width:52px;height:52px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.6;transition:.2s}
+.pd-gallery.thumb img.active{opacity:1;border-color:#fff}
+.pd-main-img{text-align:center;margin-bottom:12px}
+.pd-main-img img{width:100%;max-width:320px;max-height:300px;object-fit:contain;border-radius:12px}
+/* Image fields in forms */
+.img-fields-label{font-size:12px;color:#888;margin:10px 0 6px;text-align:left}
+.img-fields{display:flex;flex-direction:column;gap:6px}
+.img-row{display:flex;align-items:center;gap:6px}
+.img-num{font-size:11px;color:#555;min-width:20px;text-align:center}
+.img-row input{flex:1;margin-bottom:0!important;padding:8px 10px;font-size:12px}
+.img-preview{width:44px;height:44px;border-radius:6px;overflow:hidden;background:#111;border:1px solid #222;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 /* Revenue */
 .rev-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .rev-stat{background:#111;border:1px solid #222;border-radius:10px;padding:12px;text-align:center}
@@ -438,8 +456,24 @@ function loadCloudData(){
       .then(function(r){return r.json();})
       .then(function(data){
         if(f==='products'){
-          PRODUCTS = data;
-          if(!PRODUCTS.length){PRODUCTS = defaultProducts.slice(); queueSave('products', PRODUCTS);}
+          if(data && data.length > 0){
+            // GitHub 有数据，优先使用云端数据
+            PRODUCTS = data;
+          } else {
+            // GitHub 数据为空，检查 localStorage 是否有商家编辑过的数据
+            var localProducts = JSON.parse(localStorage.getItem('sc_products')||'[]');
+            if(localProducts.length > 0){
+              // localStorage 有数据，恢复并推送到 GitHub
+              PRODUCTS = localProducts;
+              queueSave('products', PRODUCTS);
+              console.log('Restored products from localStorage, pushing to GitHub');
+            } else {
+              // 两者都空，使用默认商品
+              PRODUCTS = defaultProducts.slice();
+              queueSave('products', PRODUCTS);
+              console.log('No product data found, using defaults');
+            }
+          }
           PRODUCTS.sort(function(a,b){return a.id - b.id;});
           localStorage.setItem('sc_products',JSON.stringify(PRODUCTS));
           if(typeof renderProds==='function') renderProds(currentCat);
@@ -488,67 +522,101 @@ function loadLocalData(){
   PROFILES = JSON.parse(localStorage.getItem('sc_profiles')||'[]');
 }
 
-// ===== SAVE TO GITHUB (防抖 + 批量) =====
+// ===== SAVE TO GITHUB (防抖 + 批量 + SHA冲突重试) =====
+var saveStatusEl = null;
+function showSaveStatus(msg, type){
+  // type: 'saving'|'ok'|'fail'
+  if(!saveStatusEl){
+    saveStatusEl = document.createElement('div');
+    saveStatusEl.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;transition:all .3s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(saveStatusEl);
+  }
+  var colors = {saving:'#222;color:#ffa500;border:1px solid #ffa500', ok:'#111;color:#0f0;border:1px solid #0f0', fail:'#111;color:#f66;border:1px solid #f66'};
+  saveStatusEl.style.cssText = saveStatusEl.style.cssText.replace(/background:[^;]+/,'background:'+colors[type].split(';')[0]).replace(/color:[^;]+/,'color:'+colors[type].split(';')[1]).replace(/border:[^;]+/,'border:'+colors[type].split(';')[2]);
+  saveStatusEl.textContent = msg;
+  saveStatusEl.style.opacity = '1';
+  if(type !== 'saving'){
+    setTimeout(function(){ saveStatusEl.style.opacity = '0'; }, 2500);
+  }
+}
+
 function queueSave(file, data){
   pendingWrites[file] = data;
   if(writeTimers[file]) clearTimeout(writeTimers[file]);
   writeTimers[file] = setTimeout(function(){
-    doGitHubSave(file, pendingWrites[file]);
+    doGitHubSave(file, pendingWrites[file], 0);
     pendingWrites[file] = null;
   }, 500);
 }
 
-function doGitHubSave(file, data){
+function doGitHubSave(file, data, retryCount){
   if(!GITHUB_TOKEN) return;
+  retryCount = retryCount || 0;
+  if(retryCount === 0) showSaveStatus('正在保存 '+file+'...', 'saving');
 
   var url = API_BASE+'/'+file+'.json';
   var body = {
-    message: 'Update '+file,
+    message: 'Update '+file+' at '+new Date().toLocaleString(),
     content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
   };
 
-  // 如果有缓存的 SHA，附加上去
-  if(FILE_SHA[file]){
-    body.sha = FILE_SHA[file];
-    fetch(url, {
+  function doPut(sha){
+    if(sha) body.sha = sha;
+    return fetch(url, {
       method: 'PUT',
       headers: {'Authorization':'Bearer '+GITHUB_TOKEN, 'Content-Type':'application/json'},
       body: JSON.stringify(body)
-    })
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.content && d.content.sha) FILE_SHA[file] = d.content.sha;
-      console.log('GitHub saved:', file);
-    })
-    .catch(function(e){console.error('save '+file+' error:', e);});
-    return;
+    });
   }
 
-  fetch(url+'?ref=main', {headers:{'Authorization':'Bearer '+GITHUB_TOKEN}})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.sha){
-        FILE_SHA[file] = d.sha;
-        body.sha = d.sha;
+  function handleResponse(r){
+    if(!r.ok){
+      if(r.status === 409 && retryCount < 3){
+        // SHA 冲突：重新获取 SHA 后重试
+        console.log('SHA conflict for '+file+', retrying...');
+        return fetch(url+'?ref=main', {headers:{'Authorization':'Bearer '+GITHUB_TOKEN}})
+          .then(function(rr){return rr.json();})
+          .then(function(d){
+            if(d.sha){ FILE_SHA[file] = d.sha; }
+            retryCount++;
+            return doGitHubSave(file, data, retryCount);
+          });
       }
-      return fetch(url, {
-        method: 'PUT',
-        headers: {'Authorization':'Bearer '+GITHUB_TOKEN, 'Content-Type':'application/json'},
-        body: JSON.stringify(body)
-      });
-    })
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.content && d.content.sha) FILE_SHA[file] = d.content.sha;
-      console.log('GitHub saved:', file);
-    })
-    .catch(function(e){console.error('save '+file+' error:', e);});
+      throw new Error('GitHub API error '+r.status+': '+r.statusText);
+    }
+    return r.json();
+  }
+
+  var promise;
+  if(FILE_SHA[file]){
+    promise = doPut(FILE_SHA[file]).then(handleResponse);
+  } else {
+    promise = fetch(url+'?ref=main', {headers:{'Authorization':'Bearer '+GITHUB_TOKEN}})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.sha){ FILE_SHA[file] = d.sha; }
+        return doPut(FILE_SHA[file]);
+      })
+      .then(handleResponse);
+  }
+
+  promise.then(function(d){
+    if(d && d.content && d.content.sha) FILE_SHA[file] = d.content.sha;
+    console.log('GitHub saved OK:', file);
+    showSaveStatus('✅ '+file+' 已保存到云端', 'ok');
+  }).catch(function(e){
+    console.error('save '+file+' FAILED:', e);
+    showSaveStatus('❌ '+file+' 保存失败，请重试', 'fail');
+    // 失败时清除 SHA 缓存，下次重试
+    FILE_SHA[file] = null;
+  });
 }
 
 // ===== SAVE FUNCTIONS =====
 function saveProducts(){
   localStorage.setItem('sc_products',JSON.stringify(PRODUCTS));
   queueSave('products', PRODUCTS);
+  if(typeof renderProds==='function') renderProds(currentCat);
 }
 function saveOrders(){
   localStorage.setItem('sc_orders',JSON.stringify(ORDERS));
@@ -558,24 +626,28 @@ function saveUsers(){
   localStorage.setItem('sc_users',JSON.stringify(USERS));
   queueSave('users', USERS);
 }
+function saveProfiles(){
+  localStorage.setItem('sc_profiles',JSON.stringify(PROFILES));
+  queueSave('profiles', PROFILES);
+}
 
 // Default products
 var defaultProducts = [
-  {id:1,cat:'smartphone',name:'小米15',spec:'骁龙8至尊版 / 6.36" 1.5K直屏 / 5400mAh / 徕卡三摄',price:4499,img:'📱'},
-  {id:2,cat:'smartphone',name:'iPhone 16 Pro',spec:'A18 Pro / 6.3" OLED / 48MP主摄 / 钛金属',price:7999,img:'📱'},
-  {id:3,cat:'smartphone',name:'华为Mate 70 Pro',spec:'麒麟9020 / 6.8" LTPO / 卫星通信 / 鸿蒙OS',price:6499,img:'📱'},
-  {id:4,cat:'smartphone',name:'iQOO 13',spec:'骁龙8至尊版 / 2K直屏 / 6150mAh / 120W快充',price:3999,img:'📱'},
-  {id:5,cat:'laptop',name:'联想拯救者Y9000P',spec:'i9-14900HX / RTX4060 / 16" 2.5K 240Hz',price:8999,img:'💻'},
-  {id:6,cat:'laptop',name:'MacBook Air M3',spec:'M3芯片 / 13.6" Liquid Retina / 15h续航',price:7999,img:'💻'},
-  {id:7,cat:'laptop',name:'Redmi Book Pro 15',spec:'R7-7840HS / 15.6" 3.2K 120Hz / 金属机身',price:5999,img:'💻'},
-  {id:8,cat:'tablet',name:'iPad Air M2',spec:'M2芯片 / 11" Liquid Retina / 支持Apple Pencil',price:4799,img:'📋'},
-  {id:9,cat:'tablet',name:'华为MatePad Pro',spec:'麒麟9000S / 13.2" OLED / 鸿蒙OS',price:4299,img:'📋'},
-  {id:10,cat:'earphone',name:'AirPods Pro 2',spec:'H2芯片 / ANC主动降噪 / MagSafe充电',price:1899,img:'🎧'},
-  {id:11,cat:'earphone',name:'华为FreeBuds Pro 3',spec:'麒麟A2 / 静谧通话 / 星闪连接',price:1499,img:'🎧'},
-  {id:12,cat:'wearable',name:'Apple Watch S9',spec:'S9芯片 / 全天候视网膜 / 血氧监测',price:2999,img:'⌚'},
-  {id:13,cat:'wearable',name:'华为Watch GT 4',spec:'麒麟A1 / 14天续航 / 100+运动模式',price:1488,img:'⌚'},
-  {id:14,cat:'accessory',name:'Anker 65W充电器',spec:'GaN氮化镓 / 三口快充 / 折叠插脚',price:149,img:'🔌'},
-  {id:15,cat:'accessory',name:'绿联Type-C扩展坞',spec:'7合1 / 4K HDMI / USB3.0 / SD读卡',price:199,img:'🔌'}
+  {id:1,cat:'smartphone',name:'小米15',spec:'骁龙8至尊版 / 6.36" 1.5K直屏 / 5400mAh / 徕卡三摄',price:4499,img:'📱',images:[]},
+  {id:2,cat:'smartphone',name:'iPhone 16 Pro',spec:'A18 Pro / 6.3" OLED / 48MP主摄 / 钛金属',price:7999,img:'📱',images:[]},
+  {id:3,cat:'smartphone',name:'华为Mate 70 Pro',spec:'麒麟9020 / 6.8" LTPO / 卫星通信 / 鸿蒙OS',price:6499,img:'📱',images:[]},
+  {id:4,cat:'smartphone',name:'iQOO 13',spec:'骁龙8至尊版 / 2K直屏 / 6150mAh / 120W快充',price:3999,img:'📱',images:[]},
+  {id:5,cat:'laptop',name:'联想拯救者Y9000P',spec:'i9-14900HX / RTX4060 / 16" 2.5K 240Hz',price:8999,img:'💻',images:[]},
+  {id:6,cat:'laptop',name:'MacBook Air M3',spec:'M3芯片 / 13.6" Liquid Retina / 15h续航',price:7999,img:'💻',images:[]},
+  {id:7,cat:'laptop',name:'Redmi Book Pro 15',spec:'R7-7840HS / 15.6" 3.2K 120Hz / 金属机身',price:5999,img:'💻',images:[]},
+  {id:8,cat:'tablet',name:'iPad Air M2',spec:'M2芯片 / 11" Liquid Retina / 支持Apple Pencil',price:4799,img:'📋',images:[]},
+  {id:9,cat:'tablet',name:'华为MatePad Pro',spec:'麒麟9000S / 13.2" OLED / 鸿蒙OS',price:4299,img:'📋',images:[]},
+  {id:10,cat:'earphone',name:'AirPods Pro 2',spec:'H2芯片 / ANC主动降噪 / MagSafe充电',price:1899,img:'🎧',images:[]},
+  {id:11,cat:'earphone',name:'华为FreeBuds Pro 3',spec:'麒麟A2 / 静谧通话 / 星闪连接',price:1499,img:'🎧',images:[]},
+  {id:12,cat:'wearable',name:'Apple Watch S9',spec:'S9芯片 / 全天候视网膜 / 血氧监测',price:2999,img:'⌚',images:[]},
+  {id:13,cat:'wearable',name:'华为Watch GT 4',spec:'麒麟A1 / 14天续航 / 100+运动模式',price:1488,img:'⌚',images:[]},
+  {id:14,cat:'accessory',name:'Anker 65W充电器',spec:'GaN氮化镓 / 三口快充 / 折叠插脚',price:149,img:'🔌',images:[]},
+  {id:15,cat:'accessory',name:'绿联Type-C扩展坞',spec:'7合1 / 4K HDMI / USB3.0 / SD读卡',price:199,img:'🔌',images:[]}
 ];
 
 // Categories
@@ -726,7 +798,15 @@ function renderProds(cid){
   var prods=cid==='all'?PRODUCTS:PRODUCTS.filter(function(p){return p.cat===cid});
   var h='';
   prods.forEach(function(p){
-    h+='<div class="prod-card"><div class="pn">'+p.img+' '+p.name+'</div><div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" data-pid="'+p.id+'">购买</button></div></div>';
+    var thumbHtml = '';
+    if(p.images && p.images.length > 0){
+      thumbHtml = '<div class="prod-images">';
+      for(var i=0;i<Math.min(p.images.length,3);i++){
+        thumbHtml += '<img src="'+p.images[i]+'" loading="lazy">';
+      }
+      thumbHtml += '</div>';
+    }
+    h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" data-pid="'+p.id+'">购买</button></div></div>';
   });
   if(!prods.length)h='<div style="color:#888;text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
@@ -1193,6 +1273,14 @@ function showProdDetail(pid){
   var cn = categories.find(function(c){return c.id===p.cat});
   var h = '';
   h += '<div class="pd-icon">'+p.img+'</div>';
+  // Image gallery
+  if(p.images && p.images.length > 0){
+    h += '<div class="pd-gallery">';
+    p.images.forEach(function(url,i){
+      h += '<img src="'+url+'" loading="lazy" onclick="showFullImage(\''+url+'\')">';
+    });
+    h += '</div>';
+  }
   h += '<div class="pd-name">'+p.name+'</div>';
   if(cn) h += '<div style="color:#888;font-size:13px;margin-bottom:12px">'+cn.icon+' '+cn.name+'</div>';
   h += '<div class="pd-spec">'+p.spec+'</div>';
@@ -1201,6 +1289,14 @@ function showProdDetail(pid){
   h += '<button class="pd-btn" onclick="closeProdDetail()">关闭</button>';
   document.getElementById('pdBody').innerHTML = h;
   document.getElementById('prodDetail').classList.add('show');
+}
+
+function showFullImage(url){
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:400;display:flex;align-items:center;justify-content:center;cursor:pointer';
+  overlay.innerHTML = '<img src="'+url+'" style="max-width:95vw;max-height:95vh;object-fit:contain">';
+  overlay.addEventListener('click',function(){document.body.removeChild(overlay);});
+  document.body.appendChild(overlay);
 }
 
 function closeProdDetail(){
@@ -1296,7 +1392,11 @@ function renderMerchProds(){
   var h='';
   PRODUCTS.forEach(function(p){
     var cn=categories.find(function(c){return c.id===p.cat});
-    h+='<div class="merch-prod"><div class="mpn">'+p.img+' '+p.name+'</div><div class="mps">'+(cn?cn.name:'')+' | ¥'+p.price.toLocaleString()+'</div><div class="mps">'+p.spec+'</div><div class="mpa"><button onclick="editProduct('+p.id+')">编辑</button><button onclick="deleteProduct('+p.id+')" style="color:#f66;border-color:#f66">删除</button></div></div>';
+    var imgs = '';
+    if(p.images && p.images.length > 0){
+      imgs = '<div class="prod-images">'+p.images.slice(0,4).map(function(u){return '<img src="'+u+'" loading="lazy">';}).join('')+'</div>';
+    }
+    h+='<div class="merch-prod"><div class="mpn">'+p.img+' '+p.name+'</div>'+imgs+'<div class="mps">'+(cn?cn.name:'')+' | ¥'+p.price.toLocaleString()+'</div><div class="mps">'+p.spec+'</div><div class="mpa"><button onclick="editProduct('+p.id+')">编辑</button><button onclick="deleteProduct('+p.id+')" style="color:#f66;border-color:#f66">删除</button></div></div>';
   });
   if(!h)h='<div style="color:#888;text-align:center;padding:30px">暂无商品，点击上方添加</div>';
   document.getElementById('merchProdList').innerHTML=h;
@@ -1310,16 +1410,70 @@ function showAddProduct(){
   h+='<input id="addSpec" placeholder="规格描述（详细规格，支持多行）">';
   h+='<input id="addPrice" type="number" placeholder="价格（元）">';
   h+='<input id="addImg" placeholder="图标 emoji（如 📱）">';
+  h+='<div class="img-fields-label">📷 商品图片（粘贴图片链接，最多8张）</div>';
+  h+='<div class="img-fields" id="addImgFields">';
+  for(var i=0;i<8;i++){
+    h+='<div class="img-row"><span class="img-num">'+(i+1)+'</span><input id="addImgUrl'+i+'" placeholder="图片'+(i+1)+'链接 https://..."><div class="img-preview" id="addPreview'+i+'"></div></div>';
+  }
+  h+='</div>';
   h+='<button class="btn" onclick="doAddProduct()">确认添加</button>';
   document.getElementById('modalContent').innerHTML=h;
   document.getElementById('modal').style.display='flex';
+  // Bind image preview
+  for(var i=0;i<8;i++){
+    (function(j){
+      document.getElementById('addImgUrl'+j).addEventListener('input',function(){
+        updateImgPreview('addImgUrl'+j,'addPreview'+j);
+      });
+    })(i);
+  }
+}
+
+function updateImgPreview(inputId, previewId){
+  var val = document.getElementById(inputId).value.trim();
+  var preview = document.getElementById(previewId);
+  if(val && val.match(/^https?:\/\/.+/)){
+    preview.innerHTML = '<img src="'+val+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px" onerror="this.parentElement.innerHTML=\'❌\'">';
+  } else {
+    preview.innerHTML = '';
+  }
 }
 
 function doAddProduct(){
   var img = document.getElementById('addImg').value.trim() || '📦';
-  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img};
+  var images = [];
+  for(var i=0;i<8;i++){
+    var url = document.getElementById('addImgUrl'+i).value.trim();
+    if(url) images.push(url);
+  }
+  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images};
   if(!p.name||!p.price){alert('请填写商品名称和价格');return}
   PRODUCTS.push(p);saveProducts();closeModal();refreshMerchant();
+}
+
+function makeImageFieldsHTML(images, prefix){
+  images = images || [];
+  var h='<div class="img-fields-label">📷 商品图片（粘贴图片链接，最多8张）</div>';
+  h+='<div class="img-fields">';
+  for(var i=0;i<8;i++){
+    var val = images[i] || '';
+    h+='<div class="img-row"><span class="img-num">'+(i+1)+'</span><input id="'+prefix+i+'" placeholder="图片'+(i+1)+'链接 https://..." value="'+val.replace(/"/g,'&quot;')+'"><div class="img-preview" id="'+prefix+'preview'+i+'">'+(val?'<img src="'+val+'" style="width:40px;height:40px;object-fit:cover;border-radius:6px">':'')+'</div></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+function bindImagePreview(prefix){
+  for(var i=0;i<8;i++){
+    (function(j){
+      var el = document.getElementById(prefix+j);
+      if(el){
+        el.addEventListener('input',function(){
+          updateImgPreview(prefix+j, prefix+'preview'+j);
+        });
+      }
+    })(i);
+  }
 }
 
 function editProduct(pid){
@@ -1331,9 +1485,11 @@ function editProduct(pid){
   h+='<input id="editSpec" value="'+p.spec.replace(/"/g,'&quot;')+'" placeholder="规格描述（支持详细多行说明）">';
   h+='<input id="editPrice" type="number" value="'+p.price+'">';
   h+='<input id="editImg" value="'+(p.img||'')+'" placeholder="图标 emoji">';
+  h+=makeImageFieldsHTML(p.images||[], 'editImgUrl');
   h+='<button class="btn" onclick="doEditProduct('+pid+')">保存修改</button>';
   document.getElementById('modalContent').innerHTML=h;
   document.getElementById('modal').style.display='flex';
+  bindImagePreview('editImgUrl');
 }
 
 function doEditProduct(pid){
@@ -1341,6 +1497,12 @@ function doEditProduct(pid){
   p.cat=document.getElementById('editCat').value;p.name=document.getElementById('editName').value.trim();
   p.spec=document.getElementById('editSpec').value.trim();p.price=parseInt(document.getElementById('editPrice').value)||0;
   p.img=document.getElementById('editImg').value.trim()||p.img;
+  var images = [];
+  for(var i=0;i<8;i++){
+    var url = document.getElementById('editImgUrl'+i).value.trim();
+    if(url) images.push(url);
+  }
+  p.images = images;
   saveProducts();closeModal();refreshMerchant();
 }
 

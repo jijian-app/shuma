@@ -63,13 +63,16 @@ input:focus,select:focus{border-color:#666}
 /* 3D glare */
 .prod-card .card-glare{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;border-radius:14px;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.08) 0%,transparent 60%)}
 
-/* AI Chat */
+/* AI Chat (简简导购) */
 .chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;min-height:300px}
 .msg{display:flex;gap:8px;max-width:85%}
-.msg.ai{align-self:flex-start}.msg.mine{align-self:flex-end;flex-direction:row-reverse}
-.msg .face{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:#1a1a1a;flex-shrink:0}
+.msg.pet{align-self:flex-start}.msg.mine{align-self:flex-end;flex-direction:row-reverse}
+.msg .face{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:#1a1a1a;flex-shrink:0;overflow:hidden}
+.msg.pet .face{background:radial-gradient(circle at 40% 35%,#FFD1C1,#FFB5A7 50%,#F5A623 100%);position:relative}
+.msg.pet .face::before,.msg.pet .face::after{content:'';position:absolute;width:4px;height:5px;background:#333;border-radius:50%;top:10px}
+.msg.pet .face::before{left:8px}.msg.pet .face::after{right:8px}
 .msg .text{padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.6}
-.msg.ai .text{background:#111;border:1px solid #222;border-bottom-left-radius:4px}
+.msg.pet .text{background:#1a1a0a;border:1px solid #332200;border-bottom-left-radius:4px}
 .msg.mine .text{background:#fff;color:#000;border-bottom-right-radius:4px}
 .chat-bar{display:flex;gap:8px;border-top:1px solid #222;padding-top:10px}
 .chat-bar input{flex:1;margin-bottom:0;padding:12px 16px;border-radius:22px}
@@ -225,9 +228,9 @@ select{appearance:none;-webkit-appearance:none}
       </div>
       <!-- Page 2: AI Chat -->
       <div class="page" style="display:flex;flex-direction:column">
-        <div style="margin-bottom:12px;font-size:15px;letter-spacing:2px">🤖 AI 导购助手</div>
-        <div class="chat-box" id="aibox"><div class="msg ai"><div class="face">🤖</div><div class="text">你好！我是AI导购助手~<br>告诉我你的预算和需求，我来推荐最合适的数码产品！</div></div></div>
-        <div class="chat-bar"><input id="aiin" placeholder="比如：推荐3000以内的手机"><button id="aisend">发送</button></div>
+        <div style="margin-bottom:12px;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#FFD1C1,#FFB5A7 50%,#F5A623 100%);display:inline-block;position:relative"><span style="position:absolute;width:4px;height:5px;background:#333;border-radius:50%;top:9px;left:7px"></span><span style="position:absolute;width:4px;height:5px;background:#333;border-radius:50%;top:9px;right:7px"></span></span> 简简导购</div>
+        <div class="chat-box" id="aibox"><div class="msg pet"><div class="face"></div><div class="text">嗨！我是简简～ 数码城的小导购 🐾<br>告诉我你的预算和需求，帮你挑最合适的！</div></div></div>
+        <div class="chat-bar"><input id="aiin" placeholder="比如：3000以内的游戏手机"><button id="aisend">发送</button></div>
       </div>
       <!-- Page 3: Account -->
       <div class="page">
@@ -1000,17 +1003,18 @@ function savePaymentQRAlipay(){
   }
 })();
 
-// ===== AI CHAT =====
+// ===== AI CHAT (简简导购) =====
 function aiChat(){
   var inp=document.getElementById('aiin');
   var t=inp.value.trim();if(!t)return;
   addAIMsg(t,'mine');inp.value='';
-  setTimeout(function(){addAIMsg(aiReply(t),'ai')},600+Math.random()*800);
+  setTimeout(function(){addAIMsg(aiReply(t),'pet')},600+Math.random()*800);
 }
 
 function addAIMsg(t,who){
   var d=document.createElement('div');d.className='msg '+who;
-  d.innerHTML='<div class="face">'+(who==='ai'?'🤖':'😊')+'</div><div class="text">'+t.replace(/\n/g,'<br>')+'</div>';
+  var faceHtml = who==='pet' ? '<div class="face"></div>' : '<div class="face">😊</div>';
+  d.innerHTML=faceHtml+'<div class="text">'+t.replace(/\n/g,'<br>')+'</div>';
   document.getElementById('aibox').appendChild(d);
   document.getElementById('aibox').scrollTop=document.getElementById('aibox').scrollHeight;
 }
@@ -1029,13 +1033,14 @@ function aiReply(t){
   prods.sort(function(a,b){return a.price-b.price});
   prods=prods.slice(0,4);
 
-  if(!prods.length)return '抱歉，没有找到匹配的产品 😔\n请试试放宽预算或换一种描述~';
+  if(!prods.length)return '唔...没找到合适的呢 😔\n试试放宽预算，或者换个说法～我在这里等你！';
 
-  var rep='🔍 **为你找到 '+prods.length+' 款推荐：**\n\n';
+  var greetings = ['找到啦！给你挑了这几款～','来看看这些～都是我精选的！','喏，这些很适合你！','帮你筛了这几款好物：'];
+  var rep=greetings[Math.floor(Math.random()*greetings.length)]+'\n\n';
   prods.forEach(function(p,i){
-    rep+=(i+1)+'. '+p.img+' **'+p.name+'**  ¥'+p.price.toLocaleString()+'\n   '+p.spec+'\n\n';
+    rep+=p.img+'  **'+p.name+'**  ¥'+p.price.toLocaleString()+'\n   '+p.spec+'\n\n';
   });
-  rep+='💡 如需更多细节或对比，请告诉我~';
+  rep+='💛 点商品卡片可以直接下单哦～有问题随时问我！';
   return rep;
 }
 

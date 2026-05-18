@@ -318,6 +318,7 @@ select{appearance:none;-webkit-appearance:none}
         <div class="tab" onclick="merchTab('profiles',this)">客户资料</div>
         <div class="tab" onclick="merchTab('payment',this)">收款码</div>
         <div class="tab" onclick="merchTab('revenue',this)">收入统计</div>
+        <div class="tab" onclick="merchTab('categories',this)">分类管理</div>
       </div>
       <div id="merchProducts">
         <div style="display:flex;gap:10px;margin-bottom:14px">
@@ -367,6 +368,12 @@ select{appearance:none;-webkit-appearance:none}
         <div class="rev-stats" id="revStats"></div>
         <h4 style="margin:16px 0 10px;letter-spacing:1px;font-weight:400">已付款订单</h4>
         <div id="revOrderList"></div>
+      </div>
+      <div id="merchCategories" class="hidden">
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <button class="btn" style="margin:0;flex:1" onclick="showAddCat()">+ 添加分类</button>
+        </div>
+        <div id="merchCatList"></div>
       </div>
     </div>
   </div>
@@ -478,7 +485,7 @@ function loadCloudData(){
   cloudReady = true;
 
   // 并行加载所有数据文件
-  var files = ['products','orders','users','profiles','payment'];
+  var files = ['products','orders','users','profiles','payment','categories'];
   files.forEach(function(f){
     fetch(DATA_BASE+'/'+f+'.json?'+Date.now())
       .then(function(r){return r.json();})
@@ -535,6 +542,22 @@ function loadCloudData(){
           if(elW && data.qrWechatUrl){ elW.value = data.qrWechatUrl; document.getElementById('qrWechatPreview').innerHTML = '<img src="'+data.qrWechatUrl+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'; }
           var elA = document.getElementById('qrAlipayUrl');
           if(elA && data.qrAlipayUrl){ elA.value = data.qrAlipayUrl; document.getElementById('qrAlipayPreview').innerHTML = '<img src="'+data.qrAlipayUrl+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'; }
+        }else if(f==='categories'){
+          if(data && data.length > 0){
+            categories = data;
+          } else {
+            var localCats = JSON.parse(localStorage.getItem('sc_categories')||'[]');
+            if(localCats.length > 0){
+              categories = localCats;
+              queueSave('categories', categories);
+            } else {
+              categories = defaultCategories.slice();
+              queueSave('categories', categories);
+            }
+          }
+          localStorage.setItem('sc_categories',JSON.stringify(categories));
+          if(typeof renderCats==='function') renderCats();
+          if(typeof renderMerchCats==='function') renderMerchCats();
         }
       })
       .catch(function(e){console.error('load '+f+':', e);});
@@ -547,6 +570,8 @@ function loadLocalData(){
   ORDERS = JSON.parse(localStorage.getItem('sc_orders')||'[]');
   USERS = JSON.parse(localStorage.getItem('sc_users')||'[]');
   PROFILES = JSON.parse(localStorage.getItem('sc_profiles')||'[]');
+  var localCats = JSON.parse(localStorage.getItem('sc_categories')||'[]');
+  if(localCats.length > 0) categories = localCats;
 }
 
 // ===== SAVE TO GITHUB (防抖 + 批量 + SHA冲突重试) =====
@@ -657,6 +682,11 @@ function saveProfiles(){
   localStorage.setItem('sc_profiles',JSON.stringify(PROFILES));
   queueSave('profiles', PROFILES);
 }
+function saveCategories(){
+  localStorage.setItem('sc_categories',JSON.stringify(categories));
+  queueSave('categories', categories);
+  if(typeof renderCats==='function') renderCats();
+}
 
 // Default products
 var defaultProducts = [
@@ -678,7 +708,11 @@ var defaultProducts = [
 ];
 
 // Categories
-var categories = [
+var categories = [];
+// 系统保留分类（不可删除，用于显示"全部"）
+var SYS_ALL_CAT = {id:'all',name:'全部',icon:'🛍️'};
+
+var defaultCategories = [
   {id:'all',name:'全部',icon:'🛍️'},
   {id:'smartphone',name:'手机',icon:'📱'},
   {id:'laptop',name:'笔记本',icon:'💻'},
@@ -1480,7 +1514,11 @@ function merchTab(t,el){
   if(document.getElementById('merchRevenue')){
     document.getElementById('merchRevenue').classList.toggle('hidden',t!=='revenue');
   }
+  if(document.getElementById('merchCategories')){
+    document.getElementById('merchCategories').classList.toggle('hidden',t!=='categories');
+  }
   if(t==='revenue') renderRevenue();
+  if(t==='categories') renderMerchCats();
 }
 
 // ===== MERCHANT PRODUCTS =====
@@ -1633,6 +1671,61 @@ function doEditProduct(pid){
 function deleteProduct(pid){
   if(!confirm('确定删除该商品？'))return;
   PRODUCTS=PRODUCTS.filter(function(p){return p.id!==pid});saveProducts();refreshMerchant();
+}
+
+// ===== MERCHANT CATEGORIES =====
+function renderMerchCats(){
+  var h='';
+  categories.forEach(function(c){
+    if(c.id==='all') return; // 系统保留
+    h+='<div class="merch-prod"><div class="mpn">'+c.icon+' '+c.name+'</div><div class="mps">ID: '+c.id+'</div><div class="mpa"><button onclick="editCat(\''+c.id+'\')">编辑</button><button onclick="deleteCat(\''+c.id+'\')" style="color:#f66;border-color:#f66">删除</button></div></div>';
+  });
+  if(!h)h='<div style="color:#888;text-align:center;padding:30px">暂无自定义分类</div>';
+  document.getElementById('merchCatList').innerHTML=h;
+}
+
+function showAddCat(){
+  var h='<h3>添加分类</h3><span class="close" onclick="closeModal()">✕</span>';
+  h+='<input id="addCatId" placeholder="分类ID（英文，如 camera）">';
+  h+='<input id="addCatName" placeholder="分类名称（如 相机）">';
+  h+='<input id="addCatIcon" placeholder="图标 emoji（如 📷）">';
+  h+='<button class="btn" onclick="doAddCat()">确认添加</button>';
+  document.getElementById('modalContent').innerHTML=h;
+  document.getElementById('modal').style.display='flex';
+}
+
+function doAddCat(){
+  var id = document.getElementById('addCatId').value.trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  var name = document.getElementById('addCatName').value.trim();
+  var icon = document.getElementById('addCatIcon').value.trim() || '📦';
+  if(!id || !name){alert('请填写分类ID和名称');return;}
+  if(categories.find(function(c){return c.id===id})){alert('该分类ID已存在');return;}
+  categories.push({id:id,name:name,icon:icon});
+  saveCategories();closeModal();renderMerchCats();
+}
+
+function editCat(cid){
+  var c=categories.find(function(x){return x.id===cid});if(!c)return;
+  var h='<h3>编辑分类</h3><span class="close" onclick="closeModal()">✕</span>';
+  h+='<input id="editCatId" value="'+c.id+'" disabled style="opacity:0.5">';
+  h+='<input id="editCatName" value="'+c.name+'">';
+  h+='<input id="editCatIcon" value="'+(c.icon||'')+'" placeholder="图标 emoji">';
+  h+='<button class="btn" onclick="doEditCat(\''+cid+'\')">保存修改</button>';
+  document.getElementById('modalContent').innerHTML=h;
+  document.getElementById('modal').style.display='flex';
+}
+
+function doEditCat(cid){
+  var c=categories.find(function(x){return x.id===cid});if(!c)return;
+  c.name=document.getElementById('editCatName').value.trim();
+  c.icon=document.getElementById('editCatIcon').value.trim()||c.icon;
+  saveCategories();closeModal();renderMerchCats();
+}
+
+function deleteCat(cid){
+  if(!confirm('确定删除该分类？相关商品不会被删除。'))return;
+  categories=categories.filter(function(c){return c.id!==cid});
+  saveCategories();renderMerchCats();
 }
 
 // ===== MERCHANT ORDERS =====

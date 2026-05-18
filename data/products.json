@@ -1,14 +1,5 @@
 [
   {
-    "id": 14,
-    "cat": "accessory",
-    "name": "Anker 65W充电器",
-    "spec": "GaN氮化镓 / 三口快充 / 折叠插脚",
-    "price": 149,
-    "img": "🔌",
-    "images": []
-  },
-  {
     "id": 15,
     "cat": "accessory",
     "name": "绿联Type-C扩展坞",

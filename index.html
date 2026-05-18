@@ -2,14 +2,29 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
+<!-- WeChat 优化 -->
+<meta name="format-detection" content="telephone=no">
+<meta name="x5-orientation" content="portrait">
+<meta name="x5-fullscreen" content="true">
+<meta name="x5-page-mode" content="app">
+<meta property="og:title" content="数码城 · 即简数码">
+<meta property="og:description" content="品质数码，即简即达">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://jijian-app.github.io/shuma/">
 <title>数码城 · 即简数码</title>
+<script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#000;color:#fff;min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#000;color:#fff;min-height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
 .app{height:100vh;display:flex;flex-direction:column}
+/* 微信底部引导条 */
+.wx-guide{position:fixed;bottom:0;left:0;width:100%;background:#111;border-top:1px solid #222;z-index:250;padding:10px 20px;display:none;align-items:center;justify-content:space-between;font-size:13px}
+.wx-guide.show{display:flex}
+.wx-guide .g-txt{color:#aaa;font-size:12px}
+.wx-guide .g-btn{padding:8px 16px;background:#fff;color:#000;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer}
 
 /* Entry Screen */
 .entry{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:32px;padding:40px}
@@ -1807,6 +1822,46 @@ if(currentUser && document.getElementById('customerScreen') && !document.getElem
 
 // Init merchant login screen
 document.getElementById('merchLogin').style.display='none';
+
+// ===== WECHAT SHARING =====
+var wxShareData = {
+  title: '数码城 · 即简数码',
+  desc: '品质数码，即简即达',
+  link: 'https://jijian-app.github.io/shuma/',
+  imgUrl: ''
+};
+document.addEventListener('WeixinJSBridgeReady', function(){
+  WeixinJSBridge.on('menu:share:appmessage', function(){
+    WeixinJSBridge.invoke('sendAppMessage', wxShareData, function(){});
+  });
+  WeixinJSBridge.on('menu:share:timeline', function(){
+    WeixinJSBridge.invoke('shareTimeline', {
+      title: wxShareData.title + ' - ' + wxShareData.desc,
+      link: wxShareData.link,
+      imgUrl: wxShareData.imgUrl
+    }, function(){});
+  });
+});
+
+// ===== WECHAT ADD-TO-HOME GUIDE =====
+(function(){
+  var ua = navigator.userAgent.toLowerCase();
+  if(ua.indexOf('micromessenger') === -1) return;
+  var closed = sessionStorage.getItem('wx_guide_closed');
+  if(closed) return;
+  var bar = document.createElement('div');
+  bar.className = 'wx-guide show';
+  bar.innerHTML = '<span class="g-txt">⬆️ 点击右上角 · 添加到桌面</span><span class="g-btn">知道了</span>';
+  document.body.appendChild(bar);
+  bar.querySelector('.g-btn').addEventListener('click', function(){
+    bar.classList.remove('show');
+    sessionStorage.setItem('wx_guide_closed', '1');
+  });
+  // Auto-hide after 8 seconds
+  setTimeout(function(){
+    if(bar.classList.contains('show')) bar.classList.remove('show');
+  }, 8000);
+})();
 </script>
 </body>
 </html>

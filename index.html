@@ -302,7 +302,7 @@ select{appearance:none;-webkit-appearance:none}
   <div id="merchDash" class="hidden" style="height:100vh;display:flex;flex-direction:column">
     <div class="header">
       <div class="logo-sm"><div class="sq">即<br>简</div><h2>商家管理</h2></div>
-      <span style="font-size:12px;color:#888;cursor:pointer" onclick="merchantLogout()">退出</span>
+      <button onclick="merchantLogout()" style="padding:6px 16px;background:transparent;border:1px solid #f66;color:#f66;border-radius:16px;font-size:13px;cursor:pointer">退出</button>
     </div>
     <div class="page" style="flex:1">
       <div class="stat-cards">
@@ -667,16 +667,16 @@ function doGitHubSave(file, data, retryCount){
 // ===== SAVE FUNCTIONS =====
 function saveProducts(){
   localStorage.setItem('sc_products',JSON.stringify(PRODUCTS));
-  queueSave('products', PRODUCTS);
+  if(GITHUB_TOKEN) doGitHubSave('products', PRODUCTS, 0);
   if(typeof renderProds==='function') renderProds(currentCat);
 }
 function saveOrders(){
   localStorage.setItem('sc_orders',JSON.stringify(ORDERS));
-  queueSave('orders', ORDERS);
+  if(GITHUB_TOKEN) doGitHubSave('orders', ORDERS, 0);
 }
 function saveUsers(){
   localStorage.setItem('sc_users',JSON.stringify(USERS));
-  queueSave('users', USERS);
+  if(GITHUB_TOKEN) doGitHubSave('users', USERS, 0);
 }
 function saveProfiles(){
   localStorage.setItem('sc_profiles',JSON.stringify(PROFILES));
@@ -684,7 +684,7 @@ function saveProfiles(){
 }
 function saveCategories(){
   localStorage.setItem('sc_categories',JSON.stringify(categories));
-  queueSave('categories', categories);
+  if(GITHUB_TOKEN) doGitHubSave('categories', categories, 0);
   if(typeof renderCats==='function') renderCats();
 }
 

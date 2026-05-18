@@ -1,19 +1,5 @@
 [
   {
-    "id": 1779104906843,
-    "pid": 1779104882486,
-    "pname": "手机",
-    "price": 2222,
-    "img": "📦",
-    "userId": "13025554942",
-    "status": "paid",
-    "tracking": "",
-    "courier": "",
-    "courierName": "",
-    "time": "2026/5/18 19:48:26",
-    "payMethod": "wechat"
-  },
-  {
     "id": 1779052716475,
     "pid": 1,
     "pname": "小米15",

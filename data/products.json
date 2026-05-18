@@ -1,16 +1,5 @@
 [
   {
-    "id": 1,
-    "cat": "smartphone",
-    "name": "小米15",
-    "spec": "骁龙8至尊版 / 6.36\" 1.5K直屏 / 5400mAh / 徕卡三摄",
-    "price": 4499,
-    "img": "📱",
-    "images": [
-      "dhjd"
-    ]
-  },
-  {
     "id": 2,
     "cat": "smartphone",
     "name": "iPhone 16 Pro",

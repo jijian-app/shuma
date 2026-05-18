@@ -477,10 +477,9 @@ function loadCloudData(){
               queueSave('products', PRODUCTS);
               console.log('Restored products from localStorage, pushing to GitHub');
             } else {
-              // 两者都空，使用默认商品
-              PRODUCTS = defaultProducts.slice();
-              queueSave('products', PRODUCTS);
-              console.log('No product data found, using defaults');
+              // 两者都空，商家自己添加商品
+              PRODUCTS = [];
+              console.log('Empty shop, waiting for merchant to add products');
             }
           }
           PRODUCTS.sort(function(a,b){return a.id - b.id;});
@@ -1792,9 +1791,8 @@ document.getElementById('payModal').addEventListener('click',function(e){if(e.ta
 document.getElementById('prodDetail').addEventListener('click',function(e){if(e.target===this)closeProdDetail()});
 
 // ===== INIT =====
-// 先尝试从 localStorage 加载（快速），然后从 GitHub 加载（覆盖）
+// 先从 localStorage 加载（快速），然后从 GitHub 加载（云端覆盖）
 loadLocalData();
-if(!PRODUCTS.length){ PRODUCTS = defaultProducts.slice(); saveProducts(); }
 loadCloudData();
 // Init product list if customer screen is showing
 if(currentUser && document.getElementById('customerScreen') && !document.getElementById('customerScreen').classList.contains('hidden')){

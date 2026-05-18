@@ -1,1 +1,7 @@
-[{"id":"all","name":"全部","icon":"🛍️"},{"id":"smartphone","name":"手机","icon":"📱"},{"id":"laptop","name":"笔记本","icon":"💻"},{"id":"tablet","name":"平板","icon":"📋"},{"id":"earphone","name":"耳机","icon":"🎧"},{"id":"wearable","name":"穿戴","icon":"⌚"},{"id":"accessory","name":"配件","icon":"🔌"}]
+[
+  {
+    "id": "all",
+    "name": "全部",
+    "icon": "🛍️"
+  }
+]

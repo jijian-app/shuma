@@ -973,13 +973,19 @@ function showSpecPopup(pid){
 }
 
 function selectSpecOption(si,oi,name,price){
-  specSelected[si]={name:name,price:price};
-  // Update option styles
+  // 如果点击已选中的 → 取消选择
+  if(specSelected[si] && specSelected[si].oi===oi){
+    delete specSelected[si];
+    var opts=document.querySelectorAll('#spGroups .sp-opt[data-si="'+si+'"]');
+    opts.forEach(function(o){o.classList.remove('sel')});
+    updateSpecPrice();
+    return;
+  }
+  specSelected[si]={name:name,price:price,oi:oi};
   var opts=document.querySelectorAll('#spGroups .sp-opt[data-si="'+si+'"]');
   opts.forEach(function(o){o.classList.remove('sel')});
   var sel=document.querySelector('#spGroups .sp-opt[data-si="'+si+'"][data-oi="'+oi+'"]');
   if(sel) sel.classList.add('sel');
-  // Update price
   updateSpecPrice();
 }
 
@@ -996,8 +1002,6 @@ function updateSpecPrice(){
 function confirmSpec(){
   var p=PRODUCTS.find(function(x){return x.id===specPendingPid});
   if(!p)return;
-  var allSelected=(p.specs||[]).every(function(s,i){return specSelected[i]});
-  if(!allSelected){alert('请选择全部规格');return}
   var total=p.price;
   var label=[];
   for(var si in specSelected){

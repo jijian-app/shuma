@@ -937,6 +937,18 @@ function selectCat(cid){
   renderProds(cid);
 }
 
+function getSpecPriceRange(p){
+  if(!p.specs||!p.specs.length) return {min:p.price,max:p.price,hasRange:false};
+  var prices=[];
+  function walk(specs,idx,cur){
+    if(idx>=specs.length){prices.push(cur);return}
+    specs[idx].options.forEach(function(o){walk(specs,idx+1,o.price||cur)});
+  }
+  walk(p.specs,0,p.price);
+  var min=Math.min.apply(null,prices),max=Math.max.apply(null,prices);
+  return {min:min,max:max,hasRange:min!==max};
+}
+
 function renderProds(cid){
   var prods=cid==='all'?PRODUCTS.slice():PRODUCTS.filter(function(p){return p.cat===cid});
   // 按排序权重升序，相同则热销优先
@@ -955,16 +967,17 @@ function renderProds(cid){
       }
       thumbHtml += '</div>';
     }
-    // 价格显示
-    var prices = p.prices && p.prices.length ? p.prices : [p.price];
-    var priceDisplay = '¥'+prices.join('/');
-    var ppClass = prices.length>1 ? 'pp prices-tier' : 'pp';
+    // 价格显示：有规格则显示区间
+    var range = getSpecPriceRange(p);
+    var priceDisplay = '¥'+range.min.toLocaleString();
+    if(range.hasRange) priceDisplay = '¥'+range.min.toLocaleString()+'-'+range.max.toLocaleString();
+    var hasSpecs = p.specs && p.specs.length>0;
     // 热销标识
     var hotBadge = p.isHot ? '<span class="hot-badge">🔥</span>' : '';
     // 已售
     var soldHtml = p.soldCount ? '<div class="sold-badge">已售 '+p.soldCount.toLocaleString()+' 单</div>' : '';
-    var btnHTML='<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
-    h+='<div class="prod-card" data-pid="'+p.id+'">'+hotBadge+'<div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="'+ppClass+'">'+priceDisplay+'</span>'+btnHTML+'</div>'+soldHtml+'</div>';
+    var btnHTML = hasSpecs ? '<button class="buy-btn" data-pid="'+p.id+'" style="background:rgba(255,77,106,.2);border-color:#ff4d6a;color:#ff4d6a">选规格</button>' : '<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
+    h+='<div class="prod-card" data-pid="'+p.id+'">'+hotBadge+'<div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">'+priceDisplay+'</span>'+btnHTML+'</div>'+soldHtml+'</div>';
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
@@ -1670,7 +1683,7 @@ function showAddProduct(){
   h+='<input id="addSpec" placeholder="规格描述（详细规格，支持多行）">';
   h+='<input id="addPrice" type="number" placeholder="默认价格（元）">';
   h+='<input id="addImg" placeholder="图标 emoji（如 📱）">';
-  h+=buildPriceTiers('addPrice_',[]);
+  h+=buildSpecEditor('addSpec_',[]);
   h+=buildSortHotSold('add',0,false,0);
   h+='<div class="img-fields-label">📷 商品图片（从相册选择，最多8张）</div>';
   h+='<div class="img-fields" id="addImgFields">';
@@ -1854,7 +1867,7 @@ function doAddProduct(){
     var data = document.getElementById('addImgData'+i).value;
     if(data) images.push(data);
   }
-  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images,prices:collectPrices('addPrice_'),sortOrder:parseInt(document.getElementById('addSortOrder').value)||0,isHot:document.getElementById('addIsHot').value==='1',soldCount:parseInt(document.getElementById('addSoldCount').value)||0};
+  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images,specs:collectSpecs('addSpec_'),sortOrder:parseInt(document.getElementById('addSortOrder').value)||0,isHot:document.getElementById('addIsHot').value==='1',soldCount:parseInt(document.getElementById('addSoldCount').value)||0};
   if(!p.name||!p.price){alert('请填写商品名称和价格');return}
   PRODUCTS.push(p);saveProducts();closeModal();refreshMerchant();
 }
@@ -1889,7 +1902,7 @@ function editProduct(pid){
   h+='<input id="editSpec" value="'+p.spec.replace(/"/g,'&quot;')+'" placeholder="规格描述（支持详细多行说明）">';
   h+='<input id="editPrice" type="number" value="'+p.price+'">';
   h+='<input id="editImg" value="'+(p.img||'')+'" placeholder="图标 emoji">';
-  h+=buildPriceTiers('editPrice_',p.prices||[]);
+  h+=buildSpecEditor('editSpec_',p.specs||[]);
   h+=buildSortHotSold('edit',p.sortOrder||0,p.isHot||false,p.soldCount||0);
   h+=makeImageFieldsHTML(p.images||[], 'editImg');
   h+='<button class="btn" onclick="doEditProduct('+pid+')">保存修改</button>';
@@ -1908,7 +1921,7 @@ function doEditProduct(pid){
     if(data) images.push(data);
   }
   p.images = images;
-  p.prices = collectPrices('editPrice_');
+  p.specs = collectSpecs('editSpec_');
   p.sortOrder = parseInt(document.getElementById('editSortOrder').value)||0;
   p.isHot = document.getElementById('editIsHot').value==='1';
   p.soldCount = parseInt(document.getElementById('editSoldCount').value)||0;

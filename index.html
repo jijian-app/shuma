@@ -130,6 +130,23 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 .add-spec-btn:active{background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
 .add-spec-btn:disabled{opacity:.3;cursor:default}
 
+/* Spec Selector Popup */
+.spec-popup{position:fixed;bottom:0;left:0;width:100%;background:rgba(18,18,22,.98);border-top:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;z-index:150;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);max-height:70vh;overflow-y:auto;padding:20px 16px 24px}
+.spec-popup.show{transform:translateY(0)}
+.spec-popup .sp-close{position:absolute;top:12px;right:16px;font-size:22px;color:rgba(255,255,255,.4);cursor:pointer}
+.spec-popup .sp-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.spec-popup .sp-price{font-size:26px;font-weight:700;color:#ff4d6a;margin-bottom:16px}
+.spec-popup .sp-group{margin-bottom:14px}
+.spec-popup .sp-group .sp-label{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;letter-spacing:1px}
+.spec-popup .sp-options{display:flex;flex-wrap:wrap;gap:8px}
+.spec-popup .sp-opt{padding:8px 16px;border:1px solid rgba(255,255,255,.12);border-radius:20px;font-size:13px;color:rgba(255,255,255,.7);cursor:pointer;transition:.2s;background:rgba(255,255,255,.03)}
+.spec-popup .sp-opt:active{background:rgba(255,77,106,.15);border-color:rgba(255,77,106,.4)}
+.spec-popup .sp-opt.sel{background:rgba(255,77,106,.2);border-color:#ff4d6a;color:#ff4d6a;font-weight:600}
+.spec-popup .sp-confirm{display:block;width:100%;padding:14px;border:none;border-radius:25px;background:#ff4d6a;color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:2px;transition:.2s}
+.spec-popup .sp-confirm:active{opacity:.8}
+.spec-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:149;display:none}
+.spec-overlay.show{display:block}
+
 .screen-trans{transition:opacity .35s cubic-bezier(.4,0,.2,1)}
 .flex-col{display:flex;flex-direction:column}
 .gap-sm{gap:10px}
@@ -425,6 +442,16 @@ select{appearance:none;-webkit-appearance:none}
     <button class="btn" id="payConfirmBtn" onclick="confirmPayment()">我已支付</button>
     <button class="btn btn-outline" style="margin-top:6px" onclick="closePayModal()">取消</button>
   </div>
+</div>
+
+<!-- Spec Selector Popup -->
+<div class="spec-overlay" id="specOverlay" onclick="closeSpecPopup()"></div>
+<div class="spec-popup" id="specPopup">
+  <span class="sp-close" onclick="closeSpecPopup()">✕</span>
+  <div class="sp-name" id="spName"></div>
+  <div class="sp-price" id="spPrice"></div>
+  <div id="spGroups"></div>
+  <button class="sp-confirm" id="spConfirm" onclick="confirmSpec()">确认选好了</button>
 </div>
 
 <!-- Product Detail Modal (client) -->
@@ -850,7 +877,14 @@ function initCustomer(){
     var btn = e.target.closest('.buy-btn');
     if(btn){
       var pid = parseInt(btn.getAttribute('data-pid'));
-      if(!isNaN(pid)) buyProduct(pid);
+      if(!isNaN(pid)){
+        var prod = PRODUCTS.find(function(x){return x.id===pid});
+        if(prod && prod.specs && prod.specs.length>0){
+          showSpecPopup(pid);
+        } else {
+          buyProduct(pid);
+        }
+      }
       return;
     }
     var card = e.target.closest('.prod-card');
@@ -881,6 +915,20 @@ function selectCat(cid){
   renderProds(cid);
 }
 
+function getPriceRange(p){
+  if(!p.specs||!p.specs.length) return {min:p.price,max:p.price,hasRange:false};
+  var prices=[];
+  function collect(specs,idx,cur){
+    if(idx>=specs.length){prices.push(cur);return}
+    specs[idx].options.forEach(function(o){
+      collect(specs,idx+1,o.price||cur);
+    });
+  }
+  collect(p.specs,0,p.price);
+  var min=Math.min.apply(null,prices),max=Math.max.apply(null,prices);
+  return {min:min,max:max,hasRange:min!==max};
+}
+
 function renderProds(cid){
   var prods=cid==='all'?PRODUCTS:PRODUCTS.filter(function(p){return p.cat===cid});
   var h='';
@@ -893,7 +941,12 @@ function renderProds(cid){
       }
       thumbHtml += '</div>';
     }
-    h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" data-pid="'+p.id+'">购买</button></div></div>';
+    var range=getPriceRange(p);
+    var priceDisplay='¥'+range.min.toLocaleString();
+    if(range.hasRange) priceDisplay='¥'+range.min.toLocaleString()+'-'+range.max.toLocaleString();
+    var hasSpecs=p.specs&&p.specs.length>0;
+    var btnHTML=hasSpecs?'<button class="buy-btn" data-pid="'+p.id+'" style="background:rgba(255,77,106,.2);border-color:#ff4d6a;color:#ff4d6a">选规格</button>':'<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
+    h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">'+priceDisplay+'</span>'+btnHTML+'</div></div>';
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
@@ -968,6 +1021,77 @@ function init3DTilt(){
 
 // ===== BUY =====
 var pendingOrder=null;
+
+var specSelected={};
+var specPendingPid=null;
+
+function showSpecPopup(pid){
+  var p=PRODUCTS.find(function(x){return x.id===pid});if(!p)return;
+  specPendingPid=pid;
+  specSelected={};
+  document.getElementById('spName').textContent=p.img+' '+p.name;
+  document.getElementById('spPrice').textContent='¥'+p.price.toLocaleString();
+  
+  var groupsHtml='';
+  (p.specs||[]).forEach(function(s,si){
+    groupsHtml+='<div class="sp-group"><div class="sp-label">'+s.name+'</div><div class="sp-options">';
+    s.options.forEach(function(o,oi){
+      groupsHtml+='<span class="sp-opt" onclick="selectSpecOption('+si+','+oi+',\''+o.name.replace(/'/g,"\\'")+'\','+(o.price||p.price)+')" data-si="'+si+'" data-oi="'+oi+'">'+o.name+'</span>';
+    });
+    groupsHtml+='</div></div>';
+  });
+  document.getElementById('spGroups').innerHTML=groupsHtml;
+  document.getElementById('specPopup').classList.add('show');
+  document.getElementById('specOverlay').classList.add('show');
+}
+
+function selectSpecOption(si,oi,name,price){
+  specSelected[si]={name:name,price:price};
+  // Update option styles
+  var opts=document.querySelectorAll('#spGroups .sp-opt[data-si="'+si+'"]');
+  opts.forEach(function(o){o.classList.remove('sel')});
+  var sel=document.querySelector('#spGroups .sp-opt[data-si="'+si+'"][data-oi="'+oi+'"]');
+  if(sel) sel.classList.add('sel');
+  // Update price
+  updateSpecPrice();
+}
+
+function updateSpecPrice(){
+  var p=PRODUCTS.find(function(x){return x.id===specPendingPid});
+  if(!p)return;
+  var total=p.price;
+  for(var si in specSelected){
+    if(specSelected[si].price) total=specSelected[si].price;
+  }
+  document.getElementById('spPrice').textContent='¥'+total.toLocaleString();
+}
+
+function confirmSpec(){
+  var p=PRODUCTS.find(function(x){return x.id===specPendingPid});
+  if(!p)return;
+  var allSelected=(p.specs||[]).every(function(s,i){return specSelected[i]});
+  if(!allSelected){alert('请选择全部规格');return}
+  var total=p.price;
+  var label=[];
+  for(var si in specSelected){
+    label.push((p.specs[si].name||'')+':'+specSelected[si].name);
+    if(specSelected[si].price) total=specSelected[si].price;
+  }
+  closeSpecPopup();
+  // Go to payment with selected specs
+  if(!currentUser){alert('请先在"我"页面登录注册');return}
+  pendingOrder={id:Date.now(),pid:specPendingPid,pname:p.name+' ('+label.join(', ')+')',price:total,img:p.img,userId:currentUser.phone,status:'paid',tracking:'',courier:'',courierName:'',time:new Date().toLocaleString()};
+  var el=document.getElementById('payInfo');if(el)el.textContent=p.img+' '+p.name+' ('+label.join(', ')+')';
+  el=document.getElementById('payPrice');if(el)el.textContent='¥'+total.toLocaleString();
+  currentPayMethod='wechat';switchPayMethod('wechat');
+  el=document.getElementById('payModal');if(el){el.style.display='flex'}
+}
+
+function closeSpecPopup(){
+  document.getElementById('specPopup').classList.remove('show');
+  document.getElementById('specOverlay').classList.remove('show');
+  specPendingPid=null;specSelected={};
+}
 
 function buyProduct(pid){
   if(!currentUser){alert('请先在第三页登录注册');return}
@@ -1596,10 +1720,10 @@ function clearImg(index, prefix){
 
 function buildSpecEditor(prefix, specs){
   specs = specs || [];
-  var h = '<div class="spec-editor"><div class="se-title">📐 规格管理（最多5组，如颜色/尺寸/存储）</div>';
+  var h = '<div class="spec-editor"><div class="se-title">📐 规格管理（最多5组，格式：选项=价格，如 黑色=399、白色=429）</div>';
   h += '<div id="'+prefix+'container">';
   specs.forEach(function(s,i){
-    h += specRowHTML(prefix, i, s.name||'', (s.options||[]).join('、'));
+    h += specRowHTML(prefix, i, s.name||'', s.options||[]);
   });
   h += '</div>';
   h += '<button class="add-spec-btn" id="'+prefix+'addBtn" onclick="addSpecRow(\''+prefix+'\')"';
@@ -1608,9 +1732,13 @@ function buildSpecEditor(prefix, specs){
   return h;
 }
 function specRowHTML(prefix, i, name, opts){
+  var optsDisplay = '';
+  if(opts && opts.length){
+    optsDisplay = opts.map(function(o){return o.name+(o.price?'='+o.price:'')}).join('、');
+  }
   return '<div class="spec-row" id="'+prefix+'row'+i+'">'+
     '<input class="spec-name" id="'+prefix+'name'+i+'" value="'+name.replace(/"/g,'&quot;')+'" placeholder="规格名">'+
-    '<input id="'+prefix+'opts'+i+'" value="'+opts.replace(/"/g,'&quot;')+'" placeholder="选项（用、隔开，如：黑色、白色）">'+
+    '<input id="'+prefix+'opts'+i+'" value="'+optsDisplay.replace(/"/g,'&quot;')+'" placeholder="选项=价格（如：黑色=399、白色=429）">'+
     '<button class="del-spec" onclick="delSpecRow(\''+prefix+'\','+i+')">×</button></div>';
 }
 function addSpecRow(prefix){
@@ -1659,9 +1787,17 @@ function collectSpecs(prefix){
     var nameInput = row.querySelector('.spec-name');
     var optsInput = row.querySelectorAll('input')[1];
     var name = (nameInput||{}).value||'';
-    var opts = ((optsInput||{}).value||'').trim();
-    if(name && opts){
-      specs.push({name:name, options:opts.split(/[、,，]/).map(function(o){return o.trim()}).filter(Boolean)});
+    var optsRaw = ((optsInput||{}).value||'').trim();
+    if(name && optsRaw){
+      var options = optsRaw.split(/[、,，]/).map(function(o){
+        o = o.trim();
+        var parts = o.split('=');
+        if(parts.length>=2 && parts[1] && !isNaN(parseInt(parts[1]))){
+          return {name:parts[0].trim(), price:parseInt(parts[1])};
+        }
+        return {name:o, price:0};
+      }).filter(function(o){return o.name});
+      if(options.length) specs.push({name:name, options:options});
     }
   });
   return specs;

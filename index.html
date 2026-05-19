@@ -266,8 +266,8 @@ select{appearance:none;-webkit-appearance:none}
       <!-- Page 2: AI Chat -->
       <div class="page" style="display:flex;flex-direction:column">
         <div style="margin-bottom:12px;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid #1a1a1a;display:inline-block;position:relative"><span style="position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;left:4px;transform:rotate(-10deg)"></span><span style="position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;right:4px;transform:rotate(10deg)"></span></span> 简简导购</div>
-        <div class="chat-box" id="aibox"><div class="msg pet"><div class="face"></div><div class="text">嗨！我是简简～ 数码城的小导购 🐾<br>告诉我你的预算和需求，帮你挑最合适的！</div></div></div>
-        <div class="chat-bar"><input id="aiin" placeholder="比如：3000以内的游戏手机"><button id="aisend">发送</button></div>
+        <div class="chat-box" id="aibox"><div class="msg pet"><div class="face"></div><div class="text">嗨！我是简简～ 数码城的小导购 🐾<br>告诉我你的预算和需求，帮你挑最合适的！<br>想看⌚手表的话直接说，我有华强北专属话术帮你避坑～</div></div></div>
+        <div class="chat-bar"><input id="aiin" placeholder="比如：3000以内的游戏手机 或 学生党手表推荐"><button id="aisend">发送</button></div>
       </div>
       <!-- Page 3: Account -->
       <div class="page">
@@ -1093,6 +1093,56 @@ function savePaymentQRAlipay(){
 })();
 
 // ===== AI CHAT (简简导购) =====
+
+// ---- 华强北手表·群体话术系统 ----
+var watchSession=null;
+var user_type_keywords={student:['学生','高中生','初中','大学','宿舍','上课','学校','作业','考试','爸妈不给买','零花钱','生日礼物求爸妈','住校','离家'],young_worker:['刚上班','实习','打工人','通勤','开会','久坐','加班','健身房','跑步','运动','好看','颜值','搭配','穿搭','办公室','996'],tech_lover:['刷机','root','固件','处理器','传感器','分辨率','对比','拆机','评测','参数','性价比','配置','玩机','可玩性','定制'],lower_tier:['老人','爸妈','给爸','给妈','大字','大声','简单','耐用','摔不坏','基础','便宜就行','不花哨','实惠','乡下','老家'],gift_buyer:['送礼','送人','包装','面子','生日','节日','女朋友','男朋友','小孩','孩子','仪式感','开箱','高端','上档次']};
+var student_scripts={greeting:'同学你好！看你像是给学生党选手表的？我太懂了——预算不多但功能不能少，对吧？',price:['学生党我懂，100-300价位段能打电话+回微信+上课静音的款我有推荐','别一上来就看贵的，学生用300块以内的完全够','爸妈给多少预算？150左右能买到基础通话款，200-300能上微信款'],needs:{com:'住校需要独立通讯？选带eSIM或插卡版，脱离手机也能打电话',social:'微信QQ刚需？确认微信是完整版还是精简版，能不能语音转文字',school:'上课静音+课程表导入+考试断网模式必须有，不会被老师收走',battery:'住校充电不便？选400mAh以上电池，实际能撑2天'},pain:{quality:'学生用表容易磕碰，选金属中框+康宁玻璃面板，塑料壳一摔就裂',fake:'收到货下AIDA64验配置，参数对不上7天无理由退',compat:'iPhone用户注意！部分款iOS只能用基础功能，买前确认兼容性'},closing:['学生党这款最值：通话+微信+上课静音全有，300以内最优解','记住：收到先验配置再贴膜，7天内有问题直接退']};
+var young_worker_scripts={greeting:'打工人你好！想找一块上班能戴、运动能用的表？既要实用又要好看，我懂~',price:['职场用200-500最合适，低于200质感差，超500不如加钱上品牌','通勤+运动+日常，300块左右能搞定。你主要想用在哪？'],needs:{health:'久坐提醒+心率监测是职场刚需！加班时它会提醒你站起来走走',sport:'跑步游泳？确认防水等级——IP68只能溅水，5ATM才能游泳',notify:'开会不方便看手机？消息提醒要能看完整内容+快捷回复',look:'上班戴的表得有质感，选金属表带或简约硅胶款'},pain:{battery:'不想天天充电？400mAh以上电池，开全天心率能撑两天',lag:'用几个月卡？运存低于1G必卡，买时确认运存≥1G+系统更新支持',compat:'iPhone用户要特别留意！iOS限制多，买前问清楚支持哪些功能'},closing:['职场选表公式：消息提醒好+续航≥2天+外观简约=不踩雷','先买基础款试一个月，真需要再升级，别上来买顶配用不上浪费']};
+var tech_lover_scripts={greeting:'老玩家来了？华强北手表水很深但也很好玩，我来帮你避坑找宝！',price:['玩机党花300-600最合理，太便宜没啥可玩的，太贵不如上品牌','别只看价格，看开放度。有些300块的比500块可玩性高10倍'],needs:{spec:'参数党直接看：芯片+运存+存储+屏幕。1G+8G起步，AMOLED>IPS',flash:'想刷机？确认：Bootloader解锁+第三方固件活跃+有无变砖风险',custom:'自定义表盘是灵魂！选支持表盘DIY的款，表盘小组件随便换',value:'性价比公式：价格÷(运存×存储×屏幕等级)=真性价比'},pain:{fake:'虚标是常态，AIDA64看真实芯片，安兔兔跑分对比同芯片标准分',community:'买表先看社区活跃度！论坛没帖子、固件半年不更新的别买',brick:'刷机有风险？确认有官方固件包可恢复，社区有大神做一键恢复才放心刷'},closing:['玩机党这款：芯片开放+社区活跃+固件持续更新，性价比同价位第一','收到先别急着刷，原厂系统用3天验硬件没问题再折腾']};
+var lower_tier_scripts={greeting:'给爸妈选表还是自己用？简单实用就好，我帮你找最省心的款！',price:['不用买贵的，100-300完全够。爸妈用图个能打电话+大声音','实用派选表原则：基础功能稳+电池大+声音响，200块以内搞定'],needs:{basic:'核心就3个：看时间准、打电话响、按键大好操作',sound:'大音量是刚需！扬声器功率≥1W，很多便宜款声音小得听不见',simple:'操作要简单！字大、图标大、按键大，别选触屏手势多的款'},pain:{quality:'便宜货容易坏？选金属中框的，比塑料耐摔3倍',battery:'老人不会天天充电？500mAh以上大电池，只来电提醒能撑5-7天',after:'小品牌坏了没地方修？选有全国联保的，至少1年质保'},closing:['给爸妈这款：大字大声大电池，操作就3步，充一次用5天','我帮你选了最省心的，收到帮爸妈设好常用联系人就行']};
+var gift_buyer_scripts={greeting:'送人啊？我帮你挑！送礼讲究3个字：好看、有面、不出错~',price:['送礼200-500最得体，有礼盒包装开箱有仪式感','送谁？女朋友选时尚款、送小孩选功能多酷炫的、送长辈选大字大气款'],needs:{packaging:'送礼第一印象靠包装！选有礼盒套装的款：精装盒+备用表带+贴膜',face:'收礼的人觉得值最重要，选简约设计，别选一看就是地摊货的塑料感',universal:'不知道对方喜好？选百搭款：黑/银金属机身+简约表盘，谁戴都合适'},pain:{disappoint:'最怕送了对方不用？选功能普适的——消息提醒+运动+看时间，谁都用得上',quality:'送的东西坏了很丢面子！选1年质保的，出问题直接换新',size:'表带尺寸注意！选可调节范围大的（手腕14-22cm都能戴）'},closing:['送礼这款最稳：金属机身+简约设计+礼盒包装，谁收到都觉得有档次','放心送！颜值高功能全有包装，7天有问题包退']};
+var general_pain={battery:{intro:'续航焦虑？看实际续航别看宣传，400mAh以上+关5G用4G多30%',tip:'省电技巧：亮度40%、关抬腕亮屏、不运动关GPS，续航多1-2天'},quality:{intro:'华强北质量参差是事实，但不是不能买',tip:'收到先验：AIDA64查配置+屏幕按压无水波纹+按键回弹干脆+充电口不松动'},lag:{intro:'用久了卡？买时注意运存≥1G+系统持续更新+自启动管理',tip:'到手做3件事：关不常用自启动、限制后台进程、每周重启一次'},aftersale:{intro:'售后是华强北最大的坑',tip:'买前确认：1年以上质保+售后网点覆盖+退换条款写进订单备注。碎屏险一年30-50块'}};
+function matchUserType(t){var s={};for(var type in user_type_keywords){s[type]=0;user_type_keywords[type].forEach(function(k){if(t.indexOf(k)>=0)s[type]++})}var best='student',max=0;for(var tt in s){if(s[tt]>max){max=s[tt];best=tt}}return max>0?best:null}
+function getScriptForType(type){var m={student:student_scripts,young_worker:young_worker_scripts,tech_lover:tech_lover_scripts,lower_tier:lower_tier_scripts,gift_buyer:gift_buyer_scripts};return m[type]||student_scripts}
+
+function watchReply(t){
+  var type=matchUserType(t)||'student';
+  var sc=getScriptForType(type);
+  var isNew=!watchSession||watchSession.type!==type;
+  if(isNew){watchSession={type:type,step:0}}
+  watchSession.step=(watchSession.step||0)+1;
+  var step=watchSession.step;
+  
+  if(isNew||step===1){
+    var r=sc.greeting+'\n\n';
+    r+=sc.price[Math.floor(Math.random()*sc.price.length)];
+    var ks=Object.keys(sc.needs);r+='\n\n💡 '+sc.needs[ks[Math.floor(Math.random()*ks.length)]];
+    return r;
+  }
+  
+  var t1=t.toLowerCase();
+  if(/价格|多少钱|预算|便宜|贵|价位/.test(t1)){return sc.price[Math.floor(Math.random()*sc.price.length)]}
+  if(/续航|电池|充电/.test(t1)){return general_pain.battery.intro+'\n\n'+general_pain.battery.tip}
+  if(/卡|慢|卡顿|发热/.test(t1)){return general_pain.lag.intro+'\n\n'+general_pain.lag.tip}
+  if(/质量|靠谱|真的假的|坑|骗/.test(t1)){return general_pain.quality.intro+'\n\n'+general_pain.quality.tip}
+  if(/售后|保修|坏了|维修/.test(t1)){return general_pain.aftersale.intro+'\n\n'+general_pain.aftersale.tip}
+  if(/推荐|哪款|选哪个|对比|求推/.test(t1)){
+    var cls=sc.closing;return cls[Math.floor(Math.random()*cls.length)]
+  }
+  if(/静音|上课|考试|学校/.test(t1)){return sc.needs.school||sc.needs.com}
+  if(/微信|qq|消息|通知/.test(t1)){return sc.needs.social||sc.needs.notify}
+  if(/运动|跑步|游泳|健身/.test(t1)){return sc.needs.sport||sc.needs.health}
+  if(/刷机|固件|root|可玩|社区/.test(t1)){return sc.needs.flash||sc.needs.custom}
+  if(/送|礼|包装|面子/.test(t1)){return sc.needs.packaging||sc.needs.face}
+  if(/老人|爸妈|长辈|大字/.test(t1)){return sc.needs.basic||sc.needs.sound}
+  
+  var ks=Object.keys(sc.needs);
+  return sc.needs[ks[Math.floor(Math.random()*ks.length)]]+'\n\n'+sc.closing[Math.floor(Math.random()*sc.closing.length)];
+}
+
+// ---- 华强北话术系统结束 ----
+
 function aiChat(){
   var inp=document.getElementById('aiin');
   var t=inp.value.trim();if(!t)return;
@@ -1109,12 +1159,19 @@ function addAIMsg(t,who){
 }
 
 function aiReply(t){
-  t=t.toLowerCase();
-  var budget=0;var m=t.match(/(\d+)\s*(块|元|k|千|万|百|以内)/);
+  var t1=t.toLowerCase();
+  // 检测手表/穿戴 → 触发华强北话术
+  var watchKws=['手表','手环','穿戴','智能表','watch','⌚','华强北'];
+  if(watchKws.some(function(k){return t1.indexOf(k)>=0})){
+    return watchReply(t1);
+  }
+
+  // 原有商品搜索逻辑
+  var budget=0;var m=t1.match(/(\d+)\s*(块|元|k|千|万|百|以内)/);
   if(m){budget=parseInt(m[1]);if(m[2]==='k'||m[2]==='千')budget*=1000;if(m[2]==='万')budget*=10000;}
 
   var cats=[];var kw={'手机':'smartphone','笔记本':'laptop','平板':'tablet','耳机':'earphone','手表':'wearable','配件':'accessory'};
-  Object.keys(kw).forEach(function(k){if(t.indexOf(k)>-1)cats.push(kw[k])});
+  Object.keys(kw).forEach(function(k){if(t1.indexOf(k)>-1)cats.push(kw[k])});
   if(!cats.length)cats.push('smartphone');
 
   var prods=PRODUCTS.filter(function(p){return cats.indexOf(p.cat)>-1});

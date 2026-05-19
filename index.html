@@ -938,11 +938,8 @@ function renderProds(cid){
       }
       thumbHtml += '</div>';
     }
-    var range=getPriceRange(p);
-    var priceDisplay='¥'+range.min.toLocaleString();
-    if(range.hasRange) priceDisplay='¥'+range.min.toLocaleString()+'-'+range.max.toLocaleString();
-    var hasSpecs=p.specs&&p.specs.length>0;
-    var btnHTML=hasSpecs?'<button class="buy-btn" data-pid="'+p.id+'" style="background:rgba(255,77,106,.2);border-color:#ff4d6a;color:#ff4d6a">选规格</button>':'<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
+    var priceDisplay='¥'+p.price.toLocaleString();
+    var btnHTML='<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
     h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">'+priceDisplay+'</span>'+btnHTML+'</div></div>';
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';

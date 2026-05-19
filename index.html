@@ -1114,34 +1114,81 @@ function watchReply(t){
   watchSession.step=(watchSession.step||0)+1;
   var step=watchSession.step;
   
+  var prods=searchProds(t,['wearable']);
+  var prodBlock=prods.length?('\n\n'+formatProds(prods,'🛒 平台穿戴现货：')):'';
+  
   if(isNew||step===1){
     var r=sc.greeting+'\n\n';
     r+=sc.price[Math.floor(Math.random()*sc.price.length)];
     var ks=Object.keys(sc.needs);r+='\n\n💡 '+sc.needs[ks[Math.floor(Math.random()*ks.length)]];
+    if(prods.length){r+='\n\n'+formatProds(prods,'🛒 平台穿戴现货：')}
     return r;
   }
   
   var t1=t.toLowerCase();
-  if(/价格|多少钱|预算|便宜|贵|价位/.test(t1)){return sc.price[Math.floor(Math.random()*sc.price.length)]}
+  if(/价格|多少钱|预算|便宜|贵|价位/.test(t1)){var r1=sc.price[Math.floor(Math.random()*sc.price.length)];if(prods.length)r1+=prodBlock;return r1}
   if(/续航|电池|充电/.test(t1)){return general_pain.battery.intro+'\n\n'+general_pain.battery.tip}
   if(/卡|慢|卡顿|发热/.test(t1)){return general_pain.lag.intro+'\n\n'+general_pain.lag.tip}
   if(/质量|靠谱|真的假的|坑|骗/.test(t1)){return general_pain.quality.intro+'\n\n'+general_pain.quality.tip}
   if(/售后|保修|坏了|维修/.test(t1)){return general_pain.aftersale.intro+'\n\n'+general_pain.aftersale.tip}
   if(/推荐|哪款|选哪个|对比|求推/.test(t1)){
-    var cls=sc.closing;return cls[Math.floor(Math.random()*cls.length)]
+    var cls=sc.closing[Math.floor(Math.random()*sc.closing.length)];
+    if(prods.length)cls+=prodBlock;
+    return cls;
   }
-  if(/静音|上课|考试|学校/.test(t1)){return sc.needs.school||sc.needs.com}
-  if(/微信|qq|消息|通知/.test(t1)){return sc.needs.social||sc.needs.notify}
-  if(/运动|跑步|游泳|健身/.test(t1)){return sc.needs.sport||sc.needs.health}
-  if(/刷机|固件|root|可玩|社区/.test(t1)){return sc.needs.flash||sc.needs.custom}
-  if(/送|礼|包装|面子/.test(t1)){return sc.needs.packaging||sc.needs.face}
-  if(/老人|爸妈|长辈|大字/.test(t1)){return sc.needs.basic||sc.needs.sound}
+  if(/静音|上课|考试|学校/.test(t1)){var r2=sc.needs.school||sc.needs.com;if(prods.length)r2+=prodBlock;return r2}
+  if(/微信|qq|消息|通知/.test(t1)){var r3=sc.needs.social||sc.needs.notify;if(prods.length)r3+=prodBlock;return r3}
+  if(/运动|跑步|游泳|健身/.test(t1)){var r4=sc.needs.sport||sc.needs.health;if(prods.length)r4+=prodBlock;return r4}
+  if(/刷机|固件|root|可玩|社区/.test(t1)){var r5=sc.needs.flash||sc.needs.custom;if(prods.length)r5+=prodBlock;return r5}
+  if(/送|礼|包装|面子/.test(t1)){var r6=sc.needs.packaging||sc.needs.face;if(prods.length)r6+=prodBlock;return r6}
+  if(/老人|爸妈|长辈|大字/.test(t1)){var r7=sc.needs.basic||sc.needs.sound;if(prods.length)r7+=prodBlock;return r7}
   
   var ks=Object.keys(sc.needs);
-  return sc.needs[ks[Math.floor(Math.random()*ks.length)]]+'\n\n'+sc.closing[Math.floor(Math.random()*sc.closing.length)];
+  var r8=sc.needs[ks[Math.floor(Math.random()*ks.length)]]+'\n\n'+sc.closing[Math.floor(Math.random()*sc.closing.length)];
+  if(prods.length)r8+=prodBlock;
+  return r8;
 }
 
-// ---- 华强北话术系统结束 ----
+// ---- 商品实时检索引擎 ----
+function extractBudget(t){var m=t.match(/(\d+)\s*(块|元|k|千|万|百|以内)/);if(!m)return 0;var b=parseInt(m[1]);if(m[2]==='k'||m[2]==='千')b*=1000;if(m[2]==='万')b*=10000;return b}
+function searchProds(t,catFilter){
+  var budget=extractBudget(t);var cats=catFilter||[];
+  if(!cats.length){
+    var cm={'手机':'smartphone','笔记本':'laptop','平板':'tablet','耳机':'earphone','手表':'wearable','手环':'wearable','穿戴':'wearable','配件':'accessory'};
+    Object.keys(cm).forEach(function(k){if(t.indexOf(k)>=0)cats.push(cm[k])});
+    if(!cats.length)cats.push('smartphone');
+  }
+  var prods=PRODUCTS.filter(function(p){return cats.indexOf(p.cat)>=0});
+  if(budget>0)prods=prods.filter(function(p){return p.price<=budget*1.3});
+  prods.sort(function(a,b){return a.price-b.price});
+  return prods;
+}
+function smartTag(p,all){
+  if(!all.length)return'';
+  if(p.price===all[0].price)return'💰 性价比首选';
+  if(p.price===all[all.length-1].price&&all.length>1)return'👑 旗舰之选';
+  if(p.cat==='smartphone'&&p.price<3000)return'🎯 入门优选';
+  if(p.cat==='smartphone'&&p.price<5000)return'⭐ 中端主力';
+  if(p.cat==='laptop'&&p.price<7000)return'💻 轻薄办公';
+  if(p.cat==='wearable'&&p.price<500)return'🏃 运动搭档';
+  if(p.cat==='wearable'&&p.price>2000)return'🍎 生态首选';
+  if(p.cat==='earphone'&&p.price<500)return'🎵 入门好声';
+  if(p.cat==='earphone'&&p.price>1500)return'🎧 降噪旗舰';
+  return'';
+}
+function formatProds(prods,greeting){
+  if(!prods.length)return'';
+  var r=greeting||'🛒 平台现货，按价格排序：';
+  r+='\n\n';
+  var tags=prods.map(function(p,i){return smartTag(p,prods)});
+  prods.forEach(function(p,i){
+    r+=p.img+'  **'+p.name+'**  ¥'+p.price.toLocaleString();
+    if(tags[i])r+='  '+tags[i];
+    r+='\n   '+p.spec+'\n\n';
+  });
+  return r;
+}
+// ---- 检索引擎结束 ----
 
 function aiChat(){
   var inp=document.getElementById('aiin');
@@ -1166,27 +1213,19 @@ function aiReply(t){
     return watchReply(t1);
   }
 
-  // 原有商品搜索逻辑
-  var budget=0;var m=t1.match(/(\d+)\s*(块|元|k|千|万|百|以内)/);
-  if(m){budget=parseInt(m[1]);if(m[2]==='k'||m[2]==='千')budget*=1000;if(m[2]==='万')budget*=10000;}
-
-  var cats=[];var kw={'手机':'smartphone','笔记本':'laptop','平板':'tablet','耳机':'earphone','手表':'wearable','配件':'accessory'};
-  Object.keys(kw).forEach(function(k){if(t1.indexOf(k)>-1)cats.push(kw[k])});
-  if(!cats.length)cats.push('smartphone');
-
-  var prods=PRODUCTS.filter(function(p){return cats.indexOf(p.cat)>-1});
-  if(budget>0)prods=prods.filter(function(p){return p.price<=budget*1.2});
-  prods.sort(function(a,b){return a.price-b.price});
+  // 智能商品搜索（实时读取PRODUCTS数据）
+  var prods=searchProds(t1);
   prods=prods.slice(0,4);
 
   if(!prods.length)return '唔...没找到合适的呢 😔\n试试放宽预算，或者换个说法～我在这里等你！';
 
-  var greetings = ['找到啦！给你挑了这几款～','来看看这些～都是我精选的！','喏，这些很适合你！','帮你筛了这几款好物：'];
-  var rep=greetings[Math.floor(Math.random()*greetings.length)]+'\n\n';
-  prods.forEach(function(p,i){
-    rep+=p.img+'  **'+p.name+'**  ¥'+p.price.toLocaleString()+'\n   '+p.spec+'\n\n';
-  });
-  rep+='💛 点商品卡片可以直接下单哦～有问题随时问我！';
+  var greetings=['找到啦！给你挑了这几款～','来看看这些～都是我精选的！','喏，这些很适合你！','帮你筛了这几款好物：'];
+  var g=greetings[Math.floor(Math.random()*greetings.length)];
+  var rep=formatProds(prods,g);
+  if(prods.length===1){rep+='👆 目前平台这个品类就这一款，品质有保障～';}
+  else if(prods[0].price<2000){rep+='💡 预算有限的话，第一款性价比最高！';}
+  else{rep+='💡 按价格从低到高排列，选中间那款最均衡～';}
+  rep+='\n\n💛 点商品卡片可以直接下单哦～有问题随时问我！';
   return rep;
 }
 

@@ -18,19 +18,10 @@
     ],
     "specs": [
       {
-        "name": "32G",
+        "name": "价格",
         "options": [
           {
             "name": "238",
-            "price": 0
-          }
-        ]
-      },
-      {
-        "name": "64G",
-        "options": [
-          {
-            "name": "268",
             "price": 0
           }
         ]

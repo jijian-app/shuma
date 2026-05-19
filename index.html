@@ -942,7 +942,10 @@ function getSpecPriceRange(p){
   var prices=[];
   function walk(specs,idx,cur){
     if(idx>=specs.length){prices.push(cur);return}
-    specs[idx].options.forEach(function(o){walk(specs,idx+1,o.price||cur)});
+    specs[idx].options.forEach(function(o){
+      var op = typeof o==='object' ? (o.price||cur) : cur;
+      walk(specs,idx+1,op);
+    });
   }
   walk(p.specs,0,p.price);
   var min=Math.min.apply(null,prices),max=Math.max.apply(null,prices);
@@ -981,6 +984,7 @@ function renderProds(cid){
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
+  init3DTilt();
 }
 
 // ===== BUY =====
@@ -998,9 +1002,12 @@ function showSpecPopup(pid){
   
   var groupsHtml='';
   (p.specs||[]).forEach(function(s,si){
+    if(!s.name || !s.options) return;
     groupsHtml+='<div class="sp-group"><div class="sp-label">'+s.name+'</div><div class="sp-options">';
     s.options.forEach(function(o,oi){
-      groupsHtml+='<span class="sp-opt" onclick="selectSpecOption('+si+','+oi+',\''+o.name.replace(/'/g,"\\'")+'\','+(o.price||p.price)+')" data-si="'+si+'" data-oi="'+oi+'">'+o.name+'</span>';
+      var oname = typeof o==='string' ? o : (o.name||'');
+      var oprice = typeof o==='object' ? (o.price||p.price) : p.price;
+      groupsHtml+='<span class="sp-opt" onclick="selectSpecOption('+si+','+oi+',\''+oname.replace(/'/g,"\\'")+'\','+oprice+')" data-si="'+si+'" data-oi="'+oi+'">'+oname+'</span>';
     });
     groupsHtml+='</div></div>';
   });

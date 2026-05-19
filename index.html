@@ -71,19 +71,16 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 .cat-item .ct{font-size:11px;color:rgba(255,255,255,.6)}
 
 /* Product Card */
-.prod-list{display:flex;flex-direction:column;gap:12px;perspective:800px}
-.prod-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;cursor:pointer;transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;position:relative;overflow:hidden}
+.prod-list{display:flex;flex-direction:column;gap:12px}
+.prod-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;cursor:pointer;position:relative;overflow:hidden}
 .prod-card:active{transform:scale(.98);box-shadow:0 4px 24px rgba(0,0,0,.4),0 0 1px rgba(255,255,255,.1) inset}
-.prod-card .card-inner{transform-style:preserve-3d;position:relative;z-index:1}
-.prod-card .pn{font-size:16px;font-weight:600;margin-bottom:4px;transform:translateZ(15px)}
-.prod-card .prod-images{transform:translateZ(10px)}
-.prod-card .ps{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;line-height:1.5;transform:translateZ(8px)}
-.prod-card .pb{display:flex;justify-content:space-between;align-items:center;transform:translateZ(20px)}
+.prod-card .pn{font-size:16px;font-weight:600;margin-bottom:4px}
+.prod-card .prod-images{}
+.prod-card .ps{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;line-height:1.5}
+.prod-card .pb{display:flex;justify-content:space-between;align-items:center}
 .prod-card .pp{font-size:18px;font-weight:700;letter-spacing:1px}
 .prod-card .buy-btn{padding:8px 18px;border:1px solid #fff;background:transparent;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;transition:.2s}
 .prod-card .buy-btn:active{background:#fff;color:#000}
-/* 3D glare */
-.prod-card .card-glare{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;border-radius:14px;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.08) 0%,transparent 60%)}
 
 /* Orders */
 .order-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1)}
@@ -950,73 +947,6 @@ function renderProds(cid){
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
-  init3DTilt();
-}
-
-// ===== 3D TILT EFFECT =====
-function init3DTilt(){
-  var cards = document.querySelectorAll('.prod-card');
-  cards.forEach(function(card){
-    if(card.dataset.tiltInit) return;
-    card.dataset.tiltInit = '1';
-
-    // Wrap content
-    var children = Array.from(card.childNodes);
-    var inner = document.createElement('div');
-    inner.className = 'card-inner';
-    children.forEach(function(c){inner.appendChild(c);});
-    card.appendChild(inner);
-
-    // Add glare
-    var glare = document.createElement('div');
-    glare.className = 'card-glare';
-    card.appendChild(glare);
-
-    card.addEventListener('mousemove', function(e){
-      var rect = card.getBoundingClientRect();
-      var x = e.clientX - rect.left;
-      var y = e.clientY - rect.top;
-      var cx = rect.width / 2;
-      var cy = rect.height / 2;
-      var rotateX = ((y - cy) / cy) * -12;
-      var rotateY = ((x - cx) / cx) * 12;
-      card.style.transform = 'rotateX('+rotateX+'deg) rotateY('+rotateY+'deg)';
-      card.style.boxShadow = (rotateY*0.3)+'px '+(rotateX*0.3)+'px 20px rgba(0,0,0,0.4)';
-      // Update glare position
-      var gx = (x / rect.width) * 100;
-      var gy = (y / rect.height) * 100;
-      glare.style.background = 'radial-gradient(circle at '+gx+'% '+gy+'%,rgba(255,255,255,0.1) 0%,transparent 60%)';
-    });
-
-    card.addEventListener('mouseleave', function(){
-      card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-      card.style.boxShadow = 'none';
-      glare.style.background = 'radial-gradient(circle at 50% 50%,rgba(255,255,255,0.08) 0%,transparent 60%)';
-    });
-
-    // Touch support
-    card.addEventListener('touchmove', function(e){
-      e.preventDefault();
-      var rect = card.getBoundingClientRect();
-      var x = e.touches[0].clientX - rect.left;
-      var y = e.touches[0].clientY - rect.top;
-      var cx = rect.width / 2;
-      var cy = rect.height / 2;
-      var rotateX = ((y - cy) / cy) * -10;
-      var rotateY = ((x - cx) / cx) * 10;
-      card.style.transform = 'rotateX('+rotateX+'deg) rotateY('+rotateY+'deg)';
-      card.style.boxShadow = (rotateY*0.3)+'px '+(rotateX*0.3)+'px 20px rgba(0,0,0,0.4)';
-      var gx = (x / rect.width) * 100;
-      var gy = (y / rect.height) * 100;
-      glare.style.background = 'radial-gradient(circle at '+gx+'% '+gy+'%,rgba(255,255,255,0.1) 0%,transparent 60%)';
-    }, {passive: false});
-
-    card.addEventListener('touchend', function(){
-      card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-      card.style.boxShadow = 'none';
-      glare.style.background = 'radial-gradient(circle at 50% 50%,rgba(255,255,255,0.08) 0%,transparent 60%)';
-    });
-  });
 }
 
 // ===== BUY =====

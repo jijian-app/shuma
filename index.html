@@ -18,59 +18,66 @@
 <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#000;color:#fff;min-height:100vh;min-height:100dvh;overflow-x:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
-.app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#08080a;color:#e8e8ec;min-height:100vh;min-height:100dvh;overflow-x:hidden;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;overscroll-behavior:none}
+.app-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,#08080a 0%,#0d0d11 30%,#111118 60%,#17171f 100%)}
+.app-bg::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:80vw;height:60vh;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.04) 0%,transparent 70%);pointer-events:none}
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column}
 /* 微信底部引导条 */
-.wx-guide{position:fixed;bottom:0;left:0;width:100%;background:#111;border-top:1px solid #222;z-index:250;padding:10px 20px;display:none;align-items:center;justify-content:space-between;font-size:13px}
+.wx-guide{position:fixed;bottom:0;left:0;width:100%;background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.06);z-index:250;padding:10px 20px;display:none;align-items:center;justify-content:space-between;font-size:13px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .wx-guide.show{display:flex}
-.wx-guide .g-txt{color:#aaa;font-size:12px}
+.wx-guide .g-txt{color:rgba(255,255,255,.6);font-size:12px}
 .wx-guide .g-btn{padding:8px 16px;background:#fff;color:#000;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer}
 
 /* Entry Screen */
 .entry{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:32px;padding:40px}
 .entry h1{font-size:36px;letter-spacing:8px;font-weight:200}
-.entry .sub{color:#888;font-size:14px;letter-spacing:4px}
+.entry .sub{color:rgba(255,255,255,.5);font-size:14px;letter-spacing:4px}
 .entry-btn{width:220px;padding:18px 0;border:1px solid #fff;background:transparent;color:#fff;font-size:17px;letter-spacing:4px;cursor:pointer;text-align:center;transition:.3s}
 .entry-btn:hover,.entry-btn:active{background:#fff;color:#000}
 
 /* Header */
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #222;min-height:52px;flex-shrink:0;position:sticky;top:0;z-index:10;background:#000}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.05);min-height:52px;flex-shrink:0;position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(8,8,10,.95),rgba(8,8,10,.85));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .header h2{font-size:17px;letter-spacing:3px;font-weight:400}
-.back-btn{font-size:22px;cursor:pointer;padding:4px 8px;color:#888}
+.back-btn{font-size:22px;cursor:pointer;padding:4px 8px;color:rgba(255,255,255,.5)}
 .logo-sm{display:flex;align-items:center;gap:6px}
 .logo-sm .sq{width:24px;height:24px;border:1px solid #fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;line-height:1}
 
 /* Dots */
-.dots{display:flex;justify-content:center;gap:6px;padding:8px 0;flex-shrink:0}.dot{width:5px;height:5px;border-radius:50%;background:#333;transition:.3s}.dot.on{background:#fff;width:18px;border-radius:3px}
+.dots-bar{flex-shrink:0;padding:4px 0 12px;text-align:center}
+.page-labels{display:flex;justify-content:center;gap:0;margin-bottom:6px}
+.pl{width:33.33%;font-size:11px;color:rgba(255,255,255,.2);text-align:center;transition:color .3s;letter-spacing:1px}
+.pl.on{color:rgba(255,255,255,.7)}
+.dots{display:flex;justify-content:center;gap:6px;padding:0}.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15);transition:.3s}.dot.on{background:#e8e8ec;width:18px;border-radius:3px}
 
 /* Swipe */
 .pages-wrapper{flex:1;overflow:hidden;position:relative}
-.pages{display:flex;height:100%;transition:transform .35s cubic-bezier(.25,.8,.25,1);will-change:transform;touch-action:pan-y}
-.page{min-width:100%;height:100%;overflow-y:auto;padding:16px 20px 30px;-webkit-overflow-scrolling:touch}
+.pages{display:flex;height:100%;transition:transform .5s cubic-bezier(.25,.8,.25,1);will-change:transform}
+.page{min-width:100%;height:100%;overflow-y:auto;padding:16px 20px 30px;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 
 /* Shared */
 .btn{display:block;width:100%;max-width:280px;margin:16px auto;padding:14px;text-align:center;border:1px solid #fff;border-radius:10px;background:transparent;color:#fff;font-size:15px;cursor:pointer;transition:.2s}
 .btn:active{background:#fff;color:#000}
-.btn-outline{padding:10px;border:1px solid #333;background:transparent;color:#888;font-size:14px;cursor:pointer;border-radius:8px}
-.card{background:#111;border:1px solid #222;border-radius:14px;padding:16px;margin-bottom:14px}
-.subtitle{font-size:12px;color:#888;text-align:center;margin:8px 0;letter-spacing:1px}
-input,select{width:100%;padding:12px 14px;background:#000;border:1px solid #333;color:#fff;border-radius:10px;font-size:15px;margin-bottom:8px;outline:none}
-input:focus,select:focus{border-color:#666}
+.btn-outline{padding:10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;border-radius:8px;transition:all .25s cubic-bezier(.4,0,.2,1)}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:14px;transition:background .3s,border-color .3s}
+.subtitle{font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin:8px 0;letter-spacing:1px}
+input,select{width:100%;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#e8e8ec;border-radius:10px;font-size:15px;margin-bottom:8px;outline:none;transition:border-color .3s,background .3s}
+input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.05)}
 
 /* Cats */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
-.cat-item{background:#111;border:1px solid #222;border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:.2s}
-.cat-item:active{background:#fff;color:#000;border-color:#fff}
+.cat-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.cat-item:active{background:rgba(255,255,255,.12);transform:scale(.96);border-color:rgba(255,255,255,.15)}
 .cat-item .ci{font-size:28px;margin-bottom:6px}
-.cat-item .ct{font-size:11px;color:#aaa}
+.cat-item .ct{font-size:11px;color:rgba(255,255,255,.6)}
 
 /* Product Card */
 .prod-list{display:flex;flex-direction:column;gap:12px;perspective:800px}
-.prod-card{background:#111;border:1px solid #222;border-radius:14px;padding:16px;cursor:pointer;transition:transform .15s ease-out,box-shadow .15s ease-out;transform-style:preserve-3d;position:relative;overflow:hidden}
+.prod-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;cursor:pointer;transition:transform .2s cubic-bezier(.4,0,.2,1),box-shadow .2s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;position:relative;overflow:hidden}
+.prod-card:active{transform:scale(.98);box-shadow:0 4px 24px rgba(0,0,0,.4),0 0 1px rgba(255,255,255,.1) inset}
 .prod-card .card-inner{transform-style:preserve-3d;position:relative;z-index:1}
 .prod-card .pn{font-size:16px;font-weight:600;margin-bottom:4px;transform:translateZ(15px)}
 .prod-card .prod-images{transform:translateZ(10px)}
-.prod-card .ps{font-size:12px;color:#888;margin-bottom:8px;line-height:1.5;transform:translateZ(8px)}
+.prod-card .ps{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;line-height:1.5;transform:translateZ(8px)}
 .prod-card .pb{display:flex;justify-content:space-between;align-items:center;transform:translateZ(20px)}
 .prod-card .pp{font-size:18px;font-weight:700;letter-spacing:1px}
 .prod-card .buy-btn{padding:8px 18px;border:1px solid #fff;background:transparent;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;transition:.2s}
@@ -82,7 +89,7 @@ input:focus,select:focus{border-color:#666}
 .chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;min-height:300px}
 .msg{display:flex;gap:8px;max-width:85%}
 .msg.pet{align-self:flex-start}.msg.mine{align-self:flex-end;flex-direction:row-reverse}
-.msg .face{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:#1a1a1a;flex-shrink:0;overflow:hidden}
+.msg .face{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.06);flex-shrink:0;overflow:hidden}
 .msg.pet .face{background:#fff;border:1.5px solid #1a1a1a;position:relative}
 /* 猫耳朵 */
 .msg.pet .face::before{content:'';position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;left:6px;transform:rotate(-10deg)}
@@ -90,42 +97,45 @@ input:focus,select:focus{border-color:#666}
 .msg .text{padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.6}
 .msg.pet .text{background:#1a1a0a;border:1px solid #332200;border-bottom-left-radius:4px}
 .msg.mine .text{background:#fff;color:#000;border-bottom-right-radius:4px}
-.chat-bar{display:flex;gap:8px;border-top:1px solid #222;padding-top:10px}
+.chat-bar{display:flex;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px}
 .chat-bar input{flex:1;margin-bottom:0;padding:12px 16px;border-radius:22px}
 .chat-bar button{padding:12px 20px;border-radius:22px;border:none;background:#fff;color:#000;font-size:14px;font-weight:600;cursor:pointer}
 .chat-bar button:active{opacity:.7}
 
 /* Orders */
-.order-card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer}
-.order-card:active{background:#1a1a1a}
-.order-card .oi{font-size:12px;color:#888;margin-bottom:4px}
+.order-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1)}
+.order-card:active{background:rgba(255,255,255,.06);transform:scale(.98)}
+.order-card .oi{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:4px}
 .order-card .op{font-size:16px;font-weight:600}
 .order-card .os{font-size:13px;margin-top:4px}
-.os-pending{color:#888}.os-paid{color:#ffa500}.os-picked{color:#87cefa}.os-transit{color:#87ceeb}.os-delivering{color:#98fb98}.os-delivered{color:#fff}.os-completed{color:#0f0}
+.os-pending{color:rgba(255,255,255,.5)}.os-paid{color:#ffa500}.os-picked{color:#87cefa}.os-transit{color:#87ceeb}.os-delivering{color:#98fb98}.os-delivered{color:#fff}.os-completed{color:#0f0}
 
 /* Modal */
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100}
-.modal{background:#111;border:1px solid #333;border-radius:16px;padding:24px;width:90%;max-width:380px;max-height:80vh;overflow-y:auto}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-overlay.show{display:flex}
+.modal{background:rgba(15,15,20,.98);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;width:90%;max-width:380px;max-height:80vh;overflow-y:auto;animation:modalPop .35s cubic-bezier(.4,0,.2,1)}
 .modal h3{text-align:center;margin-bottom:16px;letter-spacing:2px;font-weight:400}
-.modal .close{float:right;font-size:22px;cursor:pointer;color:#888}
+.modal .close{float:right;font-size:22px;cursor:pointer;color:rgba(255,255,255,.5)}
 
 /* Merchant */
 .stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.stat-card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;text-align:center}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center}
 .stat-card .sv{font-size:28px;font-weight:700;margin-bottom:4px}
-.stat-card .sl{font-size:12px;color:#888}
+.stat-card .sl{font-size:12px;color:rgba(255,255,255,.5)}
 
-.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid #222;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tab{padding:10px 14px;font-size:13px;cursor:pointer;color:#888;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
-.tab.on{color:#fff;border-bottom-color:#fff}
+.tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:10px 14px;font-size:13px;cursor:pointer;color:rgba(255,255,255,.5);border-bottom:2px solid transparent;transition:all .3s cubic-bezier(.4,0,.2,1);white-space:nowrap}
+.tab.on{color:#e8e8ec;border-bottom-color:rgba(255,255,255,.4)}
 
-.merch-prod{border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px;background:#111}
+.merch-prod{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:10px;transition:all .25s cubic-bezier(.4,0,.2,1)}
 .merch-prod .mpn{font-size:15px;font-weight:600}
-.merch-prod .mps{font-size:12px;color:#888;margin:4px 0}
+.merch-prod .mps{font-size:12px;color:rgba(255,255,255,.5);margin:4px 0}
 .merch-prod .mpa{display:flex;gap:8px;margin-top:8px}
-.merch-prod .mpa button{flex:1;padding:8px;font-size:12px;border:1px solid #333;border-radius:6px;background:transparent;color:#fff;cursor:pointer}
+.merch-prod .mpa button{flex:1;padding:8px;font-size:12px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:transparent;color:#e8e8ec;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1)}
 
 .hidden{display:none!important}
+
+.screen-trans{transition:opacity .35s cubic-bezier(.4,0,.2,1)}
 .flex-col{display:flex;flex-direction:column}
 .gap-sm{gap:10px}
 .page-full{display:flex;flex-direction:column;min-height:100%}
@@ -133,91 +143,102 @@ input:focus,select:focus{border-color:#666}
 select{appearance:none;-webkit-appearance:none}
 
 /* Order Detail */
-.order-detail-panel{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:200;display:none;flex-direction:column;overflow-y:auto}
-.order-detail-panel.show{display:flex}
-.od-header{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid #222;gap:12px}
-.od-header .od-back{font-size:20px;cursor:pointer;color:#888;padding:4px}
+.order-detail-panel{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,8,10,.98);z-index:200;display:none;flex-direction:column;overflow-y:auto}
+.order-detail-panel.show{display:flex;animation:fadeSlideIn .3s cubic-bezier(.4,0,.2,1)}
+.od-header{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);gap:12px}
+.od-header .od-back{font-size:20px;cursor:pointer;color:rgba(255,255,255,.5);padding:4px}
 .od-header .od-title{font-size:16px;font-weight:600;letter-spacing:2px}
 .od-body{padding:20px;flex:1;overflow-y:auto}
-.od-section{background:#111;border:1px solid #222;border-radius:14px;padding:16px;margin-bottom:14px}
-.od-section .od-label{font-size:12px;color:#888;margin-bottom:6px;letter-spacing:1px}
+.od-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:14px}
+.od-section .od-label{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px;letter-spacing:1px}
 .od-section .od-value{font-size:15px}
 /* Timeline */
 .timeline{display:flex;flex-direction:column;gap:0}
-.tl-item{display:flex;gap:12px;padding:12px 0;border-left:2px solid #333;margin-left:8px;padding-left:16px;position:relative}
-.tl-item:before{content:'';position:absolute;left:-5px;top:18px;width:8px;height:8px;border-radius:50%;background:#333}
+.tl-item{display:flex;gap:12px;padding:12px 0;border-left:2px solid rgba(255,255,255,.1);margin-left:8px;padding-left:16px;position:relative}
+.tl-item:before{content:'';position:absolute;left:-5px;top:18px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
 .tl-item.active{border-left-color:#fff}
 .tl-item.active:before{background:#fff}
 .tl-item .tl-time{font-size:11px;color:#666;min-width:48px}
 .tl-item .tl-desc{font-size:13px;flex:1}
 /* Courier select */
 .courier-select{display:flex;gap:8px;align-items:center;margin:8px 0}
-.courier-select select{flex:1;padding:10px 12px;background:#000;border:1px solid #333;color:#fff;border-radius:8px;font-size:14px}
+.courier-select select{flex:1;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#e8e8ec;border-radius:8px;font-size:14px}
 /* Order filter */
 .order-filter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.of-tab{padding:6px 14px;border-radius:16px;border:1px solid #333;font-size:12px;cursor:pointer;color:#888;transition:.2s}
+.of-tab{padding:6px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);font-size:12px;cursor:pointer;color:rgba(255,255,255,.5);transition:all .25s cubic-bezier(.4,0,.2,1)}
 .of-tab.on{background:#fff;color:#000;border-color:#fff}
 /* Product detail */
 .prod-detail-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.prod-detail-tag{padding:4px 10px;background:#1a1a1a;border-radius:10px;font-size:11px;color:#aaa}
+.prod-detail-tag{padding:4px 10px;background:rgba(255,255,255,.06);border-radius:10px;font-size:11px;color:rgba(255,255,255,.6)}
 /* Product images */
 .prod-images{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-.prod-images img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #222;flex-shrink:0}
+.prod-images img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.08);flex-shrink:0}
 .prod-images .no-img{font-size:11px;color:#555;padding:10px 0}
 /* Product detail gallery */
 .pd-gallery{display:flex;gap:4px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;-webkit-overflow-scrolling:touch;justify-content:center;flex-wrap:wrap;perspective:600px}
-.pd-gallery img{width:100%;max-width:320px;max-height:280px;object-fit:contain;border-radius:12px;border:1px solid #222;transition:transform .2s ease;transform-style:preserve-3d}
+.pd-gallery img{width:100%;max-width:320px;max-height:280px;object-fit:contain;border-radius:12px;border:1px solid rgba(255,255,255,.08);transition:transform .3s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
 .pd-gallery img:hover,.pd-gallery img:active{transform:scale(1.05) rotateY(-3deg) rotateX(2deg);box-shadow:-8px 8px 20px rgba(0,0,0,.5)}
 .pd-gallery.thumb img{width:52px;height:52px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.6;transition:.2s}
 .pd-gallery.thumb img.active{opacity:1;border-color:#fff}
 .pd-main-img{text-align:center;margin-bottom:12px}
 .pd-main-img img{width:100%;max-width:320px;max-height:300px;object-fit:contain;border-radius:12px}
 /* Image fields in forms */
-.img-fields-label{font-size:12px;color:#888;margin:10px 0 6px;text-align:left}
+.img-fields-label{font-size:12px;color:rgba(255,255,255,.5);margin:10px 0 6px;text-align:left}
 .img-fields{display:flex;flex-direction:column;gap:6px}
 .img-row{display:flex;align-items:center;gap:6px}
 .img-num{font-size:11px;color:#555;min-width:20px;text-align:center}
 .img-row input{flex:1;margin-bottom:0!important;padding:8px 10px;font-size:12px}
-.img-preview{width:44px;height:44px;border-radius:6px;overflow:hidden;background:#111;border:1px solid #222;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.img-preview{width:44px;height:44px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .img-file-input{display:none}
-.img-pick-btn{padding:6px 12px;background:#1a1a1a;border:1px solid #333;color:#ccc;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s;flex-shrink:0}
-.img-pick-btn:active{background:#333}
+.img-pick-btn{padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#ccc;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s;flex-shrink:0}
+.img-pick-btn:active{background:rgba(255,255,255,.12)}
 .img-clear{font-size:14px;color:#f66;cursor:pointer;padding:2px 6px;flex-shrink:0}
-.img-loading{font-size:10px;color:#888}
+.img-loading{font-size:10px;color:rgba(255,255,255,.5)}
 /* Revenue */
 .rev-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
-.rev-stat{background:#111;border:1px solid #222;border-radius:10px;padding:12px;text-align:center}
+.rev-stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;text-align:center}
 .rev-stat .rv{font-size:20px;font-weight:700}
-.rev-stat .rl{font-size:11px;color:#888;margin-top:4px}
+.rev-stat .rl{font-size:11px;color:rgba(255,255,255,.5);margin-top:4px}
 /* Dual QR */
 .qr-fields{display:flex;flex-direction:column;gap:14px}
-.qr-field{background:#111;border:1px solid #222;border-radius:12px;padding:14px}
+.qr-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px}
 .qr-field .qf-title{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 /* Payment method tabs */
-.pay-method-tabs{display:flex;gap:0;margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid #333}
-.pay-method-tab{flex:1;text-align:center;padding:10px;cursor:pointer;font-size:13px;color:#888;background:#111;transition:.2s}
+.pay-method-tabs{display:flex;gap:0;margin-bottom:12px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.pay-method-tab{flex:1;text-align:center;padding:10px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);transition:all .3s cubic-bezier(.4,0,.2,1)}
 .pay-method-tab.on{background:#fff;color:#000}
 /* Product detail modal */
-.prod-detail-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:150;display:none;flex-direction:column;overflow-y:auto}
-.prod-detail-modal.show{display:flex}
+.prod-detail-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:150;display:none;flex-direction:column;overflow-y:auto}
+.prod-detail-modal.show{display:flex;animation:fadeSlideIn .35s cubic-bezier(.4,0,.2,1)}
 .pd-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
-.pd-header .pd-close{font-size:22px;cursor:pointer;color:#888;padding:4px}
+.pd-header .pd-close{font-size:22px;cursor:pointer;color:rgba(255,255,255,.5);padding:4px}
 .pd-body{padding:20px;text-align:center;flex:1}
 .pd-icon{font-size:80px;margin-bottom:16px}
 .pd-name{font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:8px}
-.pd-spec{font-size:14px;color:#aaa;line-height:1.7;margin-bottom:16px;text-align:left;background:#111;border:1px solid #222;border-radius:12px;padding:16px}
+.pd-spec{font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:16px;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px}
 .pd-price{font-size:28px;font-weight:700;margin-bottom:16px}
 .pd-btn{padding:14px 40px;border:1px solid #fff;background:transparent;color:#fff;border-radius:10px;font-size:16px;cursor:pointer;transition:.2s;margin:8px}
 .pd-btn:active{background:#fff;color:#000}
 .pd-btn.primary{background:#fff;color:#000}
+
+/* ── 动画关键帧 ── */
+@keyframes modalPop{from{opacity:0;transform:scale(.92) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.page-content{animation:fadeIn .4s ease-out}
+
+/* ── merch 面板淡入 ── */
+#merchDash:not(.hidden),#merchLogin:not([style*="display: none"]){animation:fadeSlideIn .4s cubic-bezier(.4,0,.2,1)}
+
 </style>
 
 </head>
 <body>
+<div class="app-bg"></div>
 
 <div class="app" id="app">
 <!-- ==================== ENTRY ==================== -->
-<div id="entryScreen" class="entry">
+<div id="entryScreen" class="entry screen-trans" style="opacity:1">
   <div class="logo-sm" style="margin-bottom:8px">
     <div class="sq" style="width:42px;height:42px;border-radius:10px;font-size:14px">即<br>简</div>
   </div>
@@ -225,14 +246,14 @@ select{appearance:none;-webkit-appearance:none}
   <div class="sub">即简数码 · 购你所想</div>
   <div style="height:20px"></div>
   <button class="entry-btn" onclick="enterPlatform('customer')">客户平台</button>
-  <button class="entry-btn" style="border-color:#333;color:#888" onclick="enterPlatform('merchant')">商家后台</button>
+  <button class="entry-btn" style="border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5)" onclick="enterPlatform('merchant')">商家后台</button>
 </div>
 
 <!-- ==================== CUSTOMER ==================== -->
-<div id="customerScreen" class="hidden" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column">
+<div id="customerScreen" class="hidden screen-trans" style="height:100vh;height:100dvh;display:flex;flex-direction:column;opacity:1">
   <div class="header">
     <div class="logo-sm"><div class="sq">即<br>简</div><h2>数码城</h2></div>
-    <span style="font-size:12px;color:#888;cursor:pointer" onclick="backToEntry()">← 返回</span>
+    <span style="font-size:12px;color:rgba(255,255,255,.5);cursor:pointer" onclick="backToEntry()">← 返回</span>
   </div>
   <div class="pages-wrapper" id="cwrapper">
     <div class="pages" id="cpages">
@@ -276,17 +297,22 @@ select{appearance:none;-webkit-appearance:none}
           <div class="of-tab" onclick="filterOrders('shipped',this)">运输中</div>
           <div class="of-tab" onclick="filterOrders('delivered',this)">已签收</div>
         </div>
-        <div id="orderList"><div style="color:#888;text-align:center;padding:30px">暂无订单</div></div>
+        <div id="orderList"><div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无订单</div></div>
       </div>
     </div>
   </div>
-  <div class="dots" id="cdots">
-    <div class="dot on" data-i="0"></div><div class="dot" data-i="1"></div><div class="dot" data-i="2"></div>
+  <div class="dots-bar">
+    <div class="page-labels" id="clabels">
+      <span class="pl on" data-i="0">商品</span><span class="pl" data-i="1">AI导购</span><span class="pl" data-i="2">我</span>
+    </div>
+    <div class="dots" id="cdots">
+      <div class="dot on" data-i="0"></div><div class="dot" data-i="1"></div><div class="dot" data-i="2"></div>
+    </div>
   </div>
 </div>
 
 <!-- ==================== MERCHANT ==================== -->
-<div id="merchantScreen" class="hidden" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column">
+<div id="merchantScreen" class="hidden screen-trans" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;opacity:1">
   <!-- Login -->
   <div id="merchLogin" class="entry" style="gap:20px">
     <div class="logo-sm" style="margin-bottom:8px">
@@ -295,7 +321,7 @@ select{appearance:none;-webkit-appearance:none}
     <h1>商家后台</h1>
     <input type="text" id="merchCode" placeholder="邀请码">
     <button class="entry-btn" onclick="merchantLogin()">进入后台</button>
-    <button class="entry-btn" style="border-color:#333;color:#888" onclick="backToEntry()">← 返回</button>
+    <button class="entry-btn" style="border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5)" onclick="backToEntry()">← 返回</button>
   </div>
 
   <!-- Dashboard -->
@@ -397,12 +423,12 @@ select{appearance:none;-webkit-appearance:none}
       <div class="pay-method-tab" id="payTabAlipay" onclick="switchPayMethod('alipay')">🔵 支付宝</div>
     </div>
     <!-- WeChat QR -->
-    <div id="payQRWechat" style="margin:10px auto;max-width:220px;min-height:80px;border:1px solid #333;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#888;overflow:hidden">
+    <div id="payQRWechat" style="margin:10px auto;max-width:220px;min-height:80px;border:1px solid rgba(255,255,255,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);overflow:hidden">
       <span class="pay-qr-placeholder-w">暂无微信收款码</span>
       <img class="pay-qr-img-w" style="display:none;max-width:100%" src="">
     </div>
     <!-- Alipay QR -->
-    <div id="payQRAlipay" style="margin:10px auto;max-width:220px;min-height:80px;border:1px solid #333;border-radius:10px;display:none;align-items:center;justify-content:center;color:#888;overflow:hidden">
+    <div id="payQRAlipay" style="margin:10px auto;max-width:220px;min-height:80px;border:1px solid rgba(255,255,255,.1);border-radius:10px;display:none;align-items:center;justify-content:center;color:rgba(255,255,255,.5);overflow:hidden">
       <span class="pay-qr-placeholder-a">暂无支付宝收款码</span>
       <img class="pay-qr-img-a" style="display:none;max-width:100%" src="">
     </div>
@@ -539,9 +565,9 @@ function loadCloudData(){
           }
           // 加载双码到商家后台
           var elW = document.getElementById('qrWechatUrl'); 
-          if(elW && data.qrWechatUrl){ elW.value = data.qrWechatUrl; document.getElementById('qrWechatPreview').innerHTML = '<img src="'+data.qrWechatUrl+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'; }
+          if(elW && data.qrWechatUrl){ elW.value = data.qrWechatUrl; document.getElementById('qrWechatPreview').innerHTML = '<img src="'+data.qrWechatUrl+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">'; }
           var elA = document.getElementById('qrAlipayUrl');
-          if(elA && data.qrAlipayUrl){ elA.value = data.qrAlipayUrl; document.getElementById('qrAlipayPreview').innerHTML = '<img src="'+data.qrAlipayUrl+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'; }
+          if(elA && data.qrAlipayUrl){ elA.value = data.qrAlipayUrl; document.getElementById('qrAlipayPreview').innerHTML = '<img src="'+data.qrAlipayUrl+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">'; }
         }else if(f==='categories'){
           if(data && data.length > 0){
             categories = data;
@@ -583,7 +609,7 @@ function showSaveStatus(msg, type){
     saveStatusEl.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;transition:all .3s;pointer-events:none;white-space:nowrap';
     document.body.appendChild(saveStatusEl);
   }
-  var colors = {saving:'#222;color:#ffa500;border:1px solid #ffa500', ok:'#111;color:#0f0;border:1px solid #0f0', fail:'#111;color:#f66;border:1px solid #f66'};
+  var colors = {saving:'rgba(255,255,255,.08);color:#ffa500;border:1px solid #ffa500', ok:'rgba(255,255,255,.04);color:#0f0;border:1px solid #0f0', fail:'rgba(255,255,255,.04);color:#f66;border:1px solid #f66'};
   saveStatusEl.style.cssText = saveStatusEl.style.cssText.replace(/background:[^;]+/,'background:'+colors[type].split(';')[0]).replace(/color:[^;]+/,'color:'+colors[type].split(';')[1]).replace(/border:[^;]+/,'border:'+colors[type].split(';')[2]);
   saveStatusEl.textContent = msg;
   saveStatusEl.style.opacity = '1';
@@ -779,26 +805,39 @@ function savedToast(msg){
 
 // ===== ENTRY =====
 function enterPlatform(type){
-  document.getElementById('entryScreen').classList.add('hidden');
-  if(type==='customer'){
-    document.getElementById('customerScreen').classList.remove('hidden');
-    document.getElementById('customerScreen').style.display='flex';
-    initCustomer();
-  }else{
-    document.getElementById('merchantScreen').classList.remove('hidden');
-    document.getElementById('merchantScreen').style.display='block';
-    document.getElementById('merchLogin').style.display='flex';
-  }
+  var es=document.getElementById('entryScreen');
+  es.style.opacity='0';
+  setTimeout(function(){
+    es.classList.add('hidden');
+    if(type==='customer'){
+      var cs=document.getElementById('customerScreen');
+      cs.classList.remove('hidden');cs.style.display='flex';cs.style.opacity='0';
+      requestAnimationFrame(function(){requestAnimationFrame(function(){cs.style.opacity='1'})});
+      initCustomer();
+    }else{
+      var ms=document.getElementById('merchantScreen');
+      ms.classList.remove('hidden');ms.style.display='block';ms.style.opacity='0';
+      requestAnimationFrame(function(){requestAnimationFrame(function(){ms.style.opacity='1'})});
+      document.getElementById('merchLogin').style.display='flex';
+    }
+  },350);
 }
 
 function backToEntry(){
-  document.getElementById('customerScreen').classList.add('hidden');
-  document.getElementById('merchantScreen').classList.add('hidden');
-  document.getElementById('entryScreen').classList.remove('hidden');
-  MERCHANT_LOGGED=false;localStorage.setItem('sc_merchant_logged','0');
-  document.getElementById('merchLogin').style.display='flex';
-  document.getElementById('merchDash').classList.add('hidden');
-  stopMerchPoll();
+  var cs=document.getElementById('customerScreen');
+  var ms=document.getElementById('merchantScreen');
+  if(!cs.classList.contains('hidden')){cs.style.opacity='0'}
+  if(!ms.classList.contains('hidden')){ms.style.opacity='0'}
+  setTimeout(function(){
+    cs.classList.add('hidden');ms.classList.add('hidden');
+    var es=document.getElementById('entryScreen');
+    es.classList.remove('hidden');es.style.opacity='0';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){es.style.opacity='1'})});
+    MERCHANT_LOGGED=false;localStorage.setItem('sc_merchant_logged','0');
+    document.getElementById('merchLogin').style.display='flex';
+    document.getElementById('merchDash').classList.add('hidden');
+    stopMerchPoll();
+  },380);
 }
 
 // Check if merchant was already logged in
@@ -869,7 +908,7 @@ function renderProds(cid){
     }
     h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">¥'+p.price.toLocaleString()+'</span><button class="buy-btn" data-pid="'+p.id+'">购买</button></div></div>';
   });
-  if(!prods.length)h='<div style="color:#888;text-align:center;padding:30px">该分类暂无产品</div>';
+  if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
   init3DTilt();
 }
@@ -1001,13 +1040,13 @@ function closePayModal(){document.getElementById('payModal').style.display='none
 function handleQRFileWechat(input){
   var f=input.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(e){document.getElementById('qrWechatUrl').value=e.target.result;document.getElementById('qrWechatPreview').innerHTML='<img src="'+e.target.result+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'};
+  r.onload=function(e){document.getElementById('qrWechatUrl').value=e.target.result;document.getElementById('qrWechatPreview').innerHTML='<img src="'+e.target.result+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">'};
   r.readAsDataURL(f);
 }
 function handleQRFileAlipay(input){
   var f=input.files[0];if(!f)return;
   var r=new FileReader();
-  r.onload=function(e){document.getElementById('qrAlipayUrl').value=e.target.result;document.getElementById('qrAlipayPreview').innerHTML='<img src="'+e.target.result+'" style="max-width:150px;border-radius:8px;border:1px solid #333">'};
+  r.onload=function(e){document.getElementById('qrAlipayUrl').value=e.target.result;document.getElementById('qrAlipayPreview').innerHTML='<img src="'+e.target.result+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">'};
   r.readAsDataURL(f);
 }
 
@@ -1044,12 +1083,12 @@ function savePaymentQRAlipay(){
   var qrW = localStorage.getItem('sc_payment_qr_wechat') || '';
   if(qrW){
     var elW = document.getElementById('qrWechatUrl'); if(elW) elW.value = qrW;
-    var prevW = document.getElementById('qrWechatPreview'); if(prevW) prevW.innerHTML = '<img src="'+qrW+'" style="max-width:150px;border-radius:8px;border:1px solid #333">';
+    var prevW = document.getElementById('qrWechatPreview'); if(prevW) prevW.innerHTML = '<img src="'+qrW+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">';
   }
   var qrA = localStorage.getItem('sc_payment_qr_alipay') || '';
   if(qrA){
     var elA = document.getElementById('qrAlipayUrl'); if(elA) elA.value = qrA;
-    var prevA = document.getElementById('qrAlipayPreview'); if(prevA) prevA.innerHTML = '<img src="'+qrA+'" style="max-width:150px;border-radius:8px;border:1px solid #333">';
+    var prevA = document.getElementById('qrAlipayPreview'); if(prevA) prevA.innerHTML = '<img src="'+qrA+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">';
   }
 })();
 
@@ -1182,7 +1221,7 @@ function isDeliveredStatus(status){
 
 // ===== CLIENT ORDERS =====
 function renderOrders(){
-  if(!currentUser){document.getElementById('orderList').innerHTML='<div style="color:#888;text-align:center;padding:30px">请先登录查看订单</div>';return}
+  if(!currentUser){document.getElementById('orderList').innerHTML='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">请先登录查看订单</div>';return}
   var os=ORDERS.filter(function(o){return o.userId===currentUser.phone});
   
   // Apply filter
@@ -1194,14 +1233,14 @@ function renderOrders(){
     os = os.filter(function(o){ return isDeliveredStatus(o.status); });
   }
   
-  if(!os.length){document.getElementById('orderList').innerHTML='<div style="color:#888;text-align:center;padding:30px">暂无订单</div>';return}
+  if(!os.length){document.getElementById('orderList').innerHTML='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无订单</div>';return}
   var h='';
   os.forEach(function(o){
     var st = normalizeStatus(o.status);
     var stText = ORDER_STATUS[st] || '未知';
     var courierInfo = '';
     if(o.courierName || o.courier){
-      courierInfo = '<div style="font-size:12px;color:#888;margin-top:2px">快递：'+(o.courierName||o.courier||'')+' '+(o.tracking||'')+'</div>';
+      courierInfo = '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px">快递：'+(o.courierName||o.courier||'')+' '+(o.tracking||'')+'</div>';
     }
     h+='<div class="order-card" onclick="showOrderDetail('+o.id+')"><div class="oi">'+o.time+'</div><div class="op">'+o.img+' '+o.pname+'</div><div style="font-weight:700;margin:4px 0">¥'+o.price.toLocaleString()+'</div><div class="os os-'+st+'">'+stText+'</div>'+courierInfo+'</div>';
   });
@@ -1233,7 +1272,7 @@ function showOrderDetail(oid){
     var cn = categories.find(function(c){return c.id===p.cat});
     if(cn) h += '<span class="prod-detail-tag">'+cn.name+'</span>';
     h += '</div>';
-    h += '<div style="font-size:12px;color:#888;margin-top:6px;line-height:1.6">'+p.spec+'</div>';
+    h += '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;line-height:1.6">'+p.spec+'</div>';
   }
   h += '</div>';
   
@@ -1251,7 +1290,7 @@ function showOrderDetail(oid){
     h += '<div class="od-section"><div class="od-label">收货信息</div><div class="od-value">👤 '+profile.name+'</div>';
     h += '<div class="od-value" style="font-size:13px;color:#ccc;margin-top:4px">📱 '+profile.phone+'</div>';
     h += '<div class="od-value" style="font-size:13px;color:#ccc;margin-top:4px">📍 '+profile.addr+'</div>';
-    if(profile.note) h += '<div class="od-value" style="font-size:12px;color:#888;margin-top:4px">📝 '+profile.note+'</div>';
+    if(profile.note) h += '<div class="od-value" style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">📝 '+profile.note+'</div>';
     h += '</div>';
   }
   
@@ -1358,7 +1397,7 @@ function lookupLogistics(trackingNo, courierCode){
   
   // 显示加载中
   var odBody = document.getElementById('odBody');
-  if(odBody) odBody.innerHTML += '<div id="logisticsResult" class="od-section" style="margin-top:10px"><div style="color:#888;text-align:center;padding:20px">🔄 正在查询物流...</div></div>';
+  if(odBody) odBody.innerHTML += '<div id="logisticsResult" class="od-section" style="margin-top:10px"><div style="color:rgba(255,255,255,.5);text-align:center;padding:20px">🔄 正在查询物流...</div></div>';
   
   fetch(KUAIDI100_URL, {
     method: 'POST',
@@ -1380,7 +1419,7 @@ function lookupLogistics(trackingNo, courierCode){
       if(data.nu) resultHtml += '<div style="font-size:11px;color:#666;margin-top:8px">快递公司：'+data.com+' | 单号：'+data.nu+'</div>';
       if(data.state) resultHtml += '<div style="font-size:11px;color:#666">状态：'+data.state+'</div>';
     } else if(data.status==='201'){
-      resultHtml += '<div style="color:#888;text-align:center;padding:20px">📦 快递已揽收，等待物流更新</div>';
+      resultHtml += '<div style="color:rgba(255,255,255,.5);text-align:center;padding:20px">📦 快递已揽收，等待物流更新</div>';
     } else {
       resultHtml += '<div style="color:#f66;text-align:center;padding:20px">⚠️ 查询失败：'+(data.message||'暂无物流信息')+'<br><a href="https://m.kuaidi100.com/result.jsp?nu='+trackingNo+'" target="_blank" style="color:#4af;font-size:12px">打开快递100查询</a></div>';
     }
@@ -1412,7 +1451,7 @@ function showProdDetail(pid){
     h += '</div>';
   }
   h += '<div class="pd-name">'+p.name+'</div>';
-  if(cn) h += '<div style="color:#888;font-size:13px;margin-bottom:12px">'+cn.icon+' '+cn.name+'</div>';
+  if(cn) h += '<div style="color:rgba(255,255,255,.5);font-size:13px;margin-bottom:12px">'+cn.icon+' '+cn.name+'</div>';
   h += '<div class="pd-spec">'+p.spec+'</div>';
   h += '<div class="pd-price">¥'+p.price.toLocaleString()+'</div>';
   h += '<button class="pd-btn primary" onclick="buyProduct('+p.id+');closeProdDetail()">立即购买</button>';
@@ -1437,25 +1476,27 @@ function closeProdDetail(){
 function initSwipe(wrapperId,pagesId,dotsId){
   var cur=0,total=3,sx=0,sy=0,swiping=false,moved=false;
   var w=document.getElementById(wrapperId),p=document.getElementById(pagesId),dots=document.querySelectorAll('#'+dotsId+' .dot');
+  var labelsId=dotsId.replace('dots','labels'),labels=document.querySelectorAll('#'+labelsId+' .pl');
 
   function go(n){
     if(n<0||n>=total)return;cur=n;
     p.style.transform='translateX(-'+(n*100)+'%)';
     dots.forEach(function(d,i){d.classList.toggle('on',i===n)});
+    labels.forEach(function(l,i){l.classList.toggle('on',i===n)});
   }
 
   w.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;swiping=true;moved=false;p.style.transition='none'},{passive:true});
   w.addEventListener('touchmove',function(e){
     if(!swiping)return;
     var dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
-    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>5){moved=true;e.preventDefault();
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>5){moved=true;
       var off=-cur*100+(dx/w.offsetWidth)*100;
       off=Math.max(-(total-1)*100,Math.min(0,off));
       p.style.transform='translateX('+off+'%)'}
-  },{passive:false});
+  },{passive:true});
   w.addEventListener('touchend',function(e){
     if(!swiping)return;swiping=false;
-    p.style.transition='transform .35s cubic-bezier(.25,.8,.25,1)';
+    p.style.transition='transform .5s cubic-bezier(.25,.8,.25,1)';
     var dx=e.changedTouches[0].clientX-sx;
     if(moved&&Math.abs(dx)>60){go(dx<0?cur+1:cur-1)}else{go(cur)}
   });
@@ -1532,7 +1573,7 @@ function renderMerchProds(){
     }
     h+='<div class="merch-prod"><div class="mpn">'+p.img+' '+p.name+'</div>'+imgs+'<div class="mps">'+(cn?cn.name:'')+' | ¥'+p.price.toLocaleString()+'</div><div class="mps">'+p.spec+'</div><div class="mpa"><button onclick="editProduct('+p.id+')">编辑</button><button onclick="deleteProduct('+p.id+')" style="color:#f66;border-color:#f66">删除</button></div></div>';
   });
-  if(!h)h='<div style="color:#888;text-align:center;padding:30px">暂无商品，点击上方添加</div>';
+  if(!h)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无商品，点击上方添加</div>';
   document.getElementById('merchProdList').innerHTML=h;
 }
 
@@ -1680,7 +1721,7 @@ function renderMerchCats(){
     if(c.id==='all') return; // 系统保留
     h+='<div class="merch-prod"><div class="mpn">'+c.icon+' '+c.name+'</div><div class="mps">ID: '+c.id+'</div><div class="mpa"><button onclick="editCat(\''+c.id+'\')">编辑</button><button onclick="deleteCat(\''+c.id+'\')" style="color:#f66;border-color:#f66">删除</button></div></div>';
   });
-  if(!h)h='<div style="color:#888;text-align:center;padding:30px">暂无自定义分类</div>';
+  if(!h)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无自定义分类</div>';
   document.getElementById('merchCatList').innerHTML=h;
 }
 
@@ -1739,13 +1780,13 @@ function renderMerchOrders(){
     h+='<div class="order-card"><div class="oi">'+o.time+' | 买家：'+(buyer?buyer.name:o.userId)+'</div>';
     h+='<div class="op">'+o.img+' '+o.pname+' ¥'+o.price.toLocaleString()+'</div>';
     if(profile){
-      h+='<div style="font-size:12px;color:#888;margin:2px 0">📍 '+profile.name+' '+profile.addr+'</div>';
+      h+='<div style="font-size:12px;color:rgba(255,255,255,.5);margin:2px 0">📍 '+profile.name+' '+profile.addr+'</div>';
     }
     h+='<div class="os os-'+st+'" style="margin:6px 0">'+stText+'</div>';
     if(o.courierName || o.courier){
-      h+='<div style="font-size:12px;color:#888">快递：'+(o.courierName||o.courier||'')+' '+(o.tracking||'')+'</div>';
+      h+='<div style="font-size:12px;color:rgba(255,255,255,.5)">快递：'+(o.courierName||o.courier||'')+' '+(o.tracking||'')+'</div>';
     }else if(o.tracking){
-      h+='<div style="font-size:12px;color:#888">物流单号：'+o.tracking+'</div>';
+      h+='<div style="font-size:12px;color:rgba(255,255,255,.5)">物流单号：'+o.tracking+'</div>';
     }
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">';
     if(st==='paid'){
@@ -1767,10 +1808,10 @@ function renderMerchOrders(){
       h+='<button style="padding:8px 14px;font-size:12px;border:1px solid #fff;background:transparent;color:#fff;border-radius:6px;flex:1" onclick="doUpdateLogistics('+o.id+')">📝 更新物流</button>';
       h+='<button style="padding:8px 14px;font-size:12px;border:1px solid #0f0;background:transparent;color:#0f0;border-radius:6px;flex:1" onclick="updateOrderStatus('+o.id+',\'delivered\')">✅ 标记签收</button>';
     }
-    h+='<button style="padding:8px 14px;font-size:12px;border:1px solid #333;background:transparent;color:#888;border-radius:6px" onclick="showOrderDetail('+o.id+')">📋 详情</button>';
+    h+='<button style="padding:8px 14px;font-size:12px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);border-radius:6px" onclick="showOrderDetail('+o.id+')">📋 详情</button>';
     h+='</div></div>';
   });
-  if(!h)h='<div style="color:#888;text-align:center;padding:30px">暂无订单</div>';
+  if(!h)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无订单</div>';
   document.getElementById('merchOrderList').innerHTML=h;
 }
 
@@ -1824,11 +1865,11 @@ function closeModal(){document.getElementById('modal').style.display='none'}
 // ==== USER MANAGEMENT ====
 function renderMerchUsers(){
   var h='';
-  if(!USERS.length){h='<div style="color:#888;text-align:center;padding:30px">暂无注册用户</div>'}
+  if(!USERS.length){h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无注册用户</div>'}
   else{
-    h+='<div style="color:#888;font-size:12px;margin-bottom:8px">共 '+USERS.length+' 位注册用户</div>';
+    h+='<div style="color:rgba(255,255,255,.5);font-size:12px;margin-bottom:8px">共 '+USERS.length+' 位注册用户</div>';
     USERS.forEach(function(u,i){
-      h+='<div class="order-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600">👤 '+u.name+'</div><div style="font-size:13px;color:#aaa">📱 '+u.phone+'</div><div style="font-size:13px;color:#aaa">🔑 '+u.pass+'</div></div><span style="font-size:11px;color:#666">#'+(i+1)+'</span></div></div>';
+      h+='<div class="order-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600">👤 '+u.name+'</div><div style="font-size:13px;color:rgba(255,255,255,.6)">📱 '+u.phone+'</div><div style="font-size:13px;color:rgba(255,255,255,.6)">🔑 '+u.pass+'</div></div><span style="font-size:11px;color:#666">#'+(i+1)+'</span></div></div>';
     });
   }
   document.getElementById('merchUserList').innerHTML=h;
@@ -1851,10 +1892,10 @@ function clearUsers(){
 
 function renderMerchProfiles(){
   var h='';
-  if(!PROFILES.length){h='<div style="color:#888;text-align:center;padding:30px">暂无客户填写收货信息</div>'}
+  if(!PROFILES.length){h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无客户填写收货信息</div>'}
   else{
     PROFILES.forEach(function(p,i){
-      h+='<div class="order-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-weight:600">📦 '+p.name+'</div><div style="font-size:13px;color:#aaa;margin:2px 0">📱 '+p.phone+'</div><div style="font-size:13px;color:#ccc">📍 '+p.addr+'</div>'+(p.note?'<div style="font-size:12px;color:#666;margin-top:2px">📝 '+p.note+'</div>':'')+'</div><span style="font-size:11px;color:#666;white-space:nowrap">'+p.time+'</span></div></div>';
+      h+='<div class="order-card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div style="flex:1"><div style="font-weight:600">📦 '+p.name+'</div><div style="font-size:13px;color:rgba(255,255,255,.6);margin:2px 0">📱 '+p.phone+'</div><div style="font-size:13px;color:#ccc">📍 '+p.addr+'</div>'+(p.note?'<div style="font-size:12px;color:#666;margin-top:2px">📝 '+p.note+'</div>':'')+'</div><span style="font-size:11px;color:#666;white-space:nowrap">'+p.time+'</span></div></div>';
     });
   }
   document.getElementById('merchProfileList').innerHTML=h;
@@ -1893,9 +1934,9 @@ function renderRevenue(){
   paidOrders.forEach(function(o){
     var st = normalizeStatus(o.status);
     var buyer = USERS.find(function(u){return u.phone===o.userId});
-    orderH += '<div class="order-card"><div class="oi">'+o.time+'</div><div class="op">'+o.img+' '+o.pname+'</div><div style="font-weight:700">¥'+o.price.toLocaleString()+'</div><div style="font-size:12px;color:#888">'+(buyer?buyer.name:o.userId)+' · '+ORDER_STATUS[st]+'</div></div>';
+    orderH += '<div class="order-card"><div class="oi">'+o.time+'</div><div class="op">'+o.img+' '+o.pname+'</div><div style="font-weight:700">¥'+o.price.toLocaleString()+'</div><div style="font-size:12px;color:rgba(255,255,255,.5)">'+(buyer?buyer.name:o.userId)+' · '+ORDER_STATUS[st]+'</div></div>';
   });
-  if(!orderH) orderH = '<div style="color:#888;text-align:center;padding:20px">暂无已付款订单</div>';
+  if(!orderH) orderH = '<div style="color:rgba(255,255,255,.5);text-align:center;padding:20px">暂无已付款订单</div>';
   document.getElementById('revOrderList').innerHTML = orderH;
 }
 

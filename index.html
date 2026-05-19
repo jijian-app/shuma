@@ -706,16 +706,13 @@ function doGitHubSave(file, data, retryCount){
 // ===== SAVE FUNCTIONS =====
 function saveProducts(){
   localStorage.setItem('sc_products',JSON.stringify(PRODUCTS));
-  if(GITHUB_TOKEN) doGitHubSave('products', PRODUCTS, 0);
   if(typeof renderProds==='function') renderProds(currentCat);
 }
 function saveOrders(){
   localStorage.setItem('sc_orders',JSON.stringify(ORDERS));
-  if(GITHUB_TOKEN) doGitHubSave('orders', ORDERS, 0);
 }
 function saveUsers(){
   localStorage.setItem('sc_users',JSON.stringify(USERS));
-  if(GITHUB_TOKEN) doGitHubSave('users', USERS, 0);
 }
 function saveProfiles(){
   localStorage.setItem('sc_profiles',JSON.stringify(PROFILES));
@@ -723,7 +720,6 @@ function saveProfiles(){
 }
 function saveCategories(){
   localStorage.setItem('sc_categories',JSON.stringify(categories));
-  if(GITHUB_TOKEN) doGitHubSave('categories', categories, 0);
   if(typeof renderCats==='function') renderCats();
 }
 

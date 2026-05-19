@@ -118,6 +118,18 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 
 .hidden{display:none!important}
 
+/* Spec Editor */
+.spec-editor{margin:10px 0;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px}
+.spec-editor .se-title{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;letter-spacing:1px}
+.spec-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.spec-row input{flex:1;margin:0!important;font-size:13px;padding:8px 10px}
+.spec-row input.spec-name{flex:0 0 80px}
+.spec-row .del-spec{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;line-height:26px;text-align:center;padding:0;flex-shrink:0}
+.spec-row .del-spec:active{background:rgba(255,60,60,.2);border-color:rgba(255,60,60,.4)}
+.add-spec-btn{display:block;width:100%;padding:8px;border:1px dashed rgba(255,255,255,.15);border-radius:8px;background:transparent;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:4px;transition:.2s}
+.add-spec-btn:active{background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
+.add-spec-btn:disabled{opacity:.3;cursor:default}
+
 .screen-trans{transition:opacity .35s cubic-bezier(.4,0,.2,1)}
 .flex-col{display:flex;flex-direction:column}
 .gap-sm{gap:10px}
@@ -1540,6 +1552,7 @@ function showAddProduct(){
   h+='<input id="addSpec" placeholder="规格描述（详细规格，支持多行）">';
   h+='<input id="addPrice" type="number" placeholder="价格（元）">';
   h+='<input id="addImg" placeholder="图标 emoji（如 📱）">';
+  h+=buildSpecEditor('addSpec_',[]);
   h+='<div class="img-fields-label">📷 商品图片（从相册选择，最多8张）</div>';
   h+='<div class="img-fields" id="addImgFields">';
   for(var i=0;i<8;i++){
@@ -1581,6 +1594,79 @@ function clearImg(index, prefix){
   if(fileInput) fileInput.value = '';
 }
 
+function buildSpecEditor(prefix, specs){
+  specs = specs || [];
+  var h = '<div class="spec-editor"><div class="se-title">📐 规格管理（最多5组，如颜色/尺寸/存储）</div>';
+  h += '<div id="'+prefix+'container">';
+  specs.forEach(function(s,i){
+    h += specRowHTML(prefix, i, s.name||'', (s.options||[]).join('、'));
+  });
+  h += '</div>';
+  h += '<button class="add-spec-btn" id="'+prefix+'addBtn" onclick="addSpecRow(\''+prefix+'\')"';
+  if(specs.length>=5) h += ' disabled';
+  h += '>+ 添加规格组 ('+specs.length+'/5)</button></div>';
+  return h;
+}
+function specRowHTML(prefix, i, name, opts){
+  return '<div class="spec-row" id="'+prefix+'row'+i+'">'+
+    '<input class="spec-name" id="'+prefix+'name'+i+'" value="'+name.replace(/"/g,'&quot;')+'" placeholder="规格名">'+
+    '<input id="'+prefix+'opts'+i+'" value="'+opts.replace(/"/g,'&quot;')+'" placeholder="选项（用、隔开，如：黑色、白色）">'+
+    '<button class="del-spec" onclick="delSpecRow(\''+prefix+'\','+i+')">×</button></div>';
+}
+function addSpecRow(prefix){
+  var container = document.getElementById(prefix+'container');
+  var count = container.querySelectorAll('.spec-row').length;
+  if(count>=5) return;
+  var div = document.createElement('div');
+  div.innerHTML = specRowHTML(prefix, count, '', '');
+  container.appendChild(div.firstElementChild);
+  updateSpecBtn(prefix);
+}
+function delSpecRow(prefix, i){
+  var row = document.getElementById(prefix+'row'+i);
+  if(row) row.remove();
+  reindexSpecRows(prefix);
+  updateSpecBtn(prefix);
+}
+function reindexSpecRows(prefix){
+  var container = document.getElementById(prefix+'container');
+  var rows = container.querySelectorAll('.spec-row');
+  rows.forEach(function(row, idx){
+    row.id = prefix+'row'+idx;
+    var nameInput = row.querySelector('.spec-name');
+    var optsInput = row.querySelectorAll('input')[1];
+    var delBtn = row.querySelector('.del-spec');
+    if(nameInput) nameInput.id = prefix+'name'+idx;
+    if(optsInput) optsInput.id = prefix+'opts'+idx;
+    if(delBtn) delBtn.setAttribute('onclick', "delSpecRow('"+prefix+"',"+idx+")");
+  });
+}
+function updateSpecBtn(prefix){
+  var container = document.getElementById(prefix+'container');
+  var count = container.querySelectorAll('.spec-row').length;
+  var btn = document.getElementById(prefix+'addBtn');
+  if(btn){
+    btn.disabled = count>=5;
+    btn.textContent = '+ 添加规格组 ('+count+'/5)';
+  }
+}
+function collectSpecs(prefix){
+  var specs = [];
+  var container = document.getElementById(prefix+'container');
+  if(!container) return specs;
+  var rows = container.querySelectorAll('.spec-row');
+  rows.forEach(function(row, idx){
+    var nameInput = row.querySelector('.spec-name');
+    var optsInput = row.querySelectorAll('input')[1];
+    var name = (nameInput||{}).value||'';
+    var opts = ((optsInput||{}).value||'').trim();
+    if(name && opts){
+      specs.push({name:name, options:opts.split(/[、,，]/).map(function(o){return o.trim()}).filter(Boolean)});
+    }
+  });
+  return specs;
+}
+
 function doAddProduct(){
   var img = document.getElementById('addImg').value.trim() || '📦';
   var images = [];
@@ -1588,7 +1674,7 @@ function doAddProduct(){
     var data = document.getElementById('addImgData'+i).value;
     if(data) images.push(data);
   }
-  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images};
+  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images,specs:collectSpecs('addSpec_')};
   if(!p.name||!p.price){alert('请填写商品名称和价格');return}
   PRODUCTS.push(p);saveProducts();closeModal();refreshMerchant();
 }
@@ -1623,6 +1709,7 @@ function editProduct(pid){
   h+='<input id="editSpec" value="'+p.spec.replace(/"/g,'&quot;')+'" placeholder="规格描述（支持详细多行说明）">';
   h+='<input id="editPrice" type="number" value="'+p.price+'">';
   h+='<input id="editImg" value="'+(p.img||'')+'" placeholder="图标 emoji">';
+  h+=buildSpecEditor('editSpec_',p.specs||[]);
   h+=makeImageFieldsHTML(p.images||[], 'editImg');
   h+='<button class="btn" onclick="doEditProduct('+pid+')">保存修改</button>';
   document.getElementById('modalContent').innerHTML=h;
@@ -1640,6 +1727,7 @@ function doEditProduct(pid){
     if(data) images.push(data);
   }
   p.images = images;
+  p.specs = collectSpecs('editSpec_');
   saveProducts();closeModal();refreshMerchant();
 }
 

@@ -77,10 +77,16 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 .prod-card .pn{font-size:16px;font-weight:600;margin-bottom:4px}
 .prod-card .prod-images{}
 .prod-card .ps{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;line-height:1.5}
-.prod-card .pb{display:flex;justify-content:space-between;align-items:center}
-.prod-card .pp{font-size:18px;font-weight:700;letter-spacing:1px}
+.prod-card .pb{display:flex;justify-content:space-between;align-items:flex-end}
+.prod-card .pp{font-size:18px;font-weight:700;letter-spacing:1px;color:#ff4d6a}
+.prod-card .pp.prices-tier{font-size:14px;letter-spacing:0}
 .prod-card .buy-btn{padding:8px 18px;border:1px solid #fff;background:transparent;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;transition:.2s}
 .prod-card .buy-btn:active{background:#fff;color:#000}
+/* 热销标识 */
+.prod-card .hot-badge{position:absolute;top:8px;right:8px;font-size:18px;z-index:2;filter:drop-shadow(0 0 6px rgba(255,100,0,.5));animation:hotPulse 1.5s ease-in-out infinite}
+@keyframes hotPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+/* 已售 */
+.prod-card .sold-badge{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
 
 /* Orders */
 .order-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1)}
@@ -135,6 +141,20 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 .add-spec-btn{display:block;width:100%;padding:8px;border:1px dashed rgba(255,255,255,.15);border-radius:8px;background:transparent;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:4px;transition:.2s}
 .add-spec-btn:active{background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
 .add-spec-btn:disabled{opacity:.3;cursor:default}
+
+/* Price Tiers Editor */
+.price-tiers{margin:10px 0;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px}
+.price-tiers .pt-title{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;letter-spacing:1px}
+.price-tiers .pt-row{display:flex;gap:8px;margin-bottom:6px;align-items:center}
+.price-tiers .pt-row .pt-label{width:24px;font-size:12px;color:rgba(255,255,255,.3);text-align:center;flex-shrink:0}
+.price-tiers .pt-row input{flex:1;margin:0!important;font-size:13px;padding:8px 10px}
+/* Sort & Hot row */
+.sort-hot-row{display:flex;gap:10px;margin:10px 0;align-items:center}
+.sort-hot-row label{font-size:12px;color:rgba(255,255,255,.5);white-space:nowrap}
+.sort-hot-row input[type=number]{width:70px;margin:0!important;padding:8px}
+.sort-hot-row .hot-toggle{padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;transition:.2s}
+.sort-hot-row .hot-toggle.on{background:rgba(255,100,0,.2);border-color:#ff6a00;color:#ff6a00}
+.sort-hot-row input[type=number].sold-input{width:100px}
 
 /* Spec Selector Popup */
 .spec-popup{position:fixed;bottom:0;left:0;width:100%;background:rgba(18,18,22,.98);border-top:1px solid rgba(255,255,255,.08);border-radius:20px 20px 0 0;z-index:150;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);max-height:70vh;overflow-y:auto;padding:20px 16px 24px}
@@ -917,22 +937,14 @@ function selectCat(cid){
   renderProds(cid);
 }
 
-function getPriceRange(p){
-  if(!p.specs||!p.specs.length) return {min:p.price,max:p.price,hasRange:false};
-  var prices=[];
-  function collect(specs,idx,cur){
-    if(idx>=specs.length){prices.push(cur);return}
-    specs[idx].options.forEach(function(o){
-      collect(specs,idx+1,o.price||cur);
-    });
-  }
-  collect(p.specs,0,p.price);
-  var min=Math.min.apply(null,prices),max=Math.max.apply(null,prices);
-  return {min:min,max:max,hasRange:min!==max};
-}
-
 function renderProds(cid){
-  var prods=cid==='all'?PRODUCTS:PRODUCTS.filter(function(p){return p.cat===cid});
+  var prods=cid==='all'?PRODUCTS.slice():PRODUCTS.filter(function(p){return p.cat===cid});
+  // 按排序权重升序，相同则热销优先
+  prods.sort(function(a,b){
+    if((a.sortOrder||0)!==(b.sortOrder||0)) return (a.sortOrder||0)-(b.sortOrder||0);
+    if((a.isHot||false)!==(b.isHot||false)) return a.isHot?-1:1;
+    return b.id-a.id;
+  });
   var h='';
   prods.forEach(function(p){
     var thumbHtml = '';
@@ -943,9 +955,16 @@ function renderProds(cid){
       }
       thumbHtml += '</div>';
     }
-    var priceDisplay='¥'+p.price.toLocaleString();
+    // 价格显示
+    var prices = p.prices && p.prices.length ? p.prices : [p.price];
+    var priceDisplay = '¥'+prices.join('/');
+    var ppClass = prices.length>1 ? 'pp prices-tier' : 'pp';
+    // 热销标识
+    var hotBadge = p.isHot ? '<span class="hot-badge">🔥</span>' : '';
+    // 已售
+    var soldHtml = p.soldCount ? '<div class="sold-badge">已售 '+p.soldCount.toLocaleString()+' 单</div>' : '';
     var btnHTML='<button class="buy-btn" data-pid="'+p.id+'">购买</button>';
-    h+='<div class="prod-card" data-pid="'+p.id+'"><div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="pp">'+priceDisplay+'</span>'+btnHTML+'</div></div>';
+    h+='<div class="prod-card" data-pid="'+p.id+'">'+hotBadge+'<div class="pn">'+p.img+' '+p.name+'</div>'+thumbHtml+'<div class="ps">'+p.spec+'</div><div class="pb"><span class="'+ppClass+'">'+priceDisplay+'</span>'+btnHTML+'</div>'+soldHtml+'</div>';
   });
   if(!prods.length)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">该分类暂无产品</div>';
   document.getElementById('prodList').innerHTML=h;
@@ -1571,13 +1590,18 @@ function merchTab(t,el){
 // ===== MERCHANT PRODUCTS =====
 function renderMerchProds(){
   var h='';
+  PRODUCTS.sort(function(a,b){return (a.sortOrder||0)-(b.sortOrder||0)||b.id-a.id});
   PRODUCTS.forEach(function(p){
     var cn=categories.find(function(c){return c.id===p.cat});
     var imgs = '';
     if(p.images && p.images.length > 0){
       imgs = '<div class="prod-images">'+p.images.slice(0,4).map(function(u){return '<img src="'+u+'" loading="lazy">';}).join('')+'</div>';
     }
-    h+='<div class="merch-prod"><div class="mpn">'+p.img+' '+p.name+'</div>'+imgs+'<div class="mps">'+(cn?cn.name:'')+' | ¥'+p.price.toLocaleString()+'</div><div class="mps">'+p.spec+'</div><div class="mpa"><button onclick="editProduct('+p.id+')">编辑</button><button onclick="deleteProduct('+p.id+')" style="color:#f66;border-color:#f66">删除</button></div></div>';
+    var badges = '';
+    if(p.isHot) badges += '🔥 ';
+    if(p.soldCount) badges += '已售'+p.soldCount+'单 ';
+    if(p.prices && p.prices.length) badges += '¥'+p.prices.join('/')+' ';
+    h+='<div class="merch-prod"><div class="mpn">'+p.img+' '+p.name+' '+(p.isHot?'🔥':'')+'</div>'+imgs+'<div class="mps">'+(cn?cn.name:'')+' | ¥'+p.price.toLocaleString()+' | 排序:'+(p.sortOrder||0)+' '+(badges?'| '+badges:'')+'</div><div class="mps">'+p.spec+'</div><div class="mpa"><button onclick="editProduct('+p.id+')">编辑</button><button onclick="deleteProduct('+p.id+')" style="color:#f66;border-color:#f66">删除</button></div></div>';
   });
   if(!h)h='<div style="color:rgba(255,255,255,.5);text-align:center;padding:30px">暂无商品，点击上方添加</div>';
   document.getElementById('merchProdList').innerHTML=h;
@@ -1604,15 +1628,44 @@ function compressImage(file, callback, maxW, quality){
   reader.readAsDataURL(file);
 }
 
+// ---- 价格档位 & 排序 & 热销 ----
+function buildPriceTiers(prefix, prices){
+  prices = prices || [];
+  var h = '<div class="price-tiers"><div class="pt-title">💰 价格档位（最多5个，留空不显示，客户端用 / 分隔）</div>';
+  for(var i=0;i<5;i++){
+    var val = prices[i]||'';
+    h += '<div class="pt-row"><span class="pt-label">¥'+(i+1)+'</span><input id="'+prefix+i+'" type="number" value="'+val+'" placeholder="档位'+(i+1)+'价格"></div>';
+  }
+  h += '</div>';
+  return h;
+}
+function collectPrices(prefix){
+  var prices = [];
+  for(var i=0;i<5;i++){
+    var v = parseInt(document.getElementById(prefix+i).value);
+    if(v>0) prices.push(v);
+  }
+  return prices;
+}
+function buildSortHotSold(prefix, sortOrder, isHot, soldCount){
+  var h = '<div class="sort-hot-row">';
+  h += '<label>🔢 排序:</label><input type="number" id="'+prefix+'SortOrder" value="'+sortOrder+'" placeholder="越小越前">';
+  h += '<label>🔥 热销:</label><input type="hidden" id="'+prefix+'IsHot" value="'+(isHot?'1':'0')+'"><button class="hot-toggle'+(isHot?' on':'')+'" id="'+prefix+'HotBtn" onclick="var h=document.getElementById(\''+prefix+'IsHot\');var b=document.getElementById(\''+prefix+'HotBtn\');if(h.value===\'1\'){h.value=\'0\';b.classList.remove(\'on\')}else{h.value=\'1\';b.classList.add(\'on\')}">'+(isHot?'热销中':'设为热销')+'</button>';
+  h += '<label>📊 已售:</label><input type="number" class="sold-input" id="'+prefix+'SoldCount" value="'+soldCount+'" placeholder="已售单数">';
+  h += '</div>';
+  return h;
+}
+
 function showAddProduct(){
   var copt=categories.filter(function(c){return c.id!=='all'}).map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>'}).join('');
   var h='<h3>添加商品</h3><span class="close" onclick="closeModal()">✕</span>';
   h+='<select id="addCat">'+copt+'</select>';
   h+='<input id="addName" placeholder="商品名称">';
   h+='<input id="addSpec" placeholder="规格描述（详细规格，支持多行）">';
-  h+='<input id="addPrice" type="number" placeholder="价格（元）">';
+  h+='<input id="addPrice" type="number" placeholder="默认价格（元）">';
   h+='<input id="addImg" placeholder="图标 emoji（如 📱）">';
-  h+=buildSpecEditor('addSpec_',[]);
+  h+=buildPriceTiers('addPrice_',[]);
+  h+=buildSortHotSold('add_',0,false,0);
   h+='<div class="img-fields-label">📷 商品图片（从相册选择，最多8张）</div>';
   h+='<div class="img-fields" id="addImgFields">';
   for(var i=0;i<8;i++){
@@ -1795,7 +1848,7 @@ function doAddProduct(){
     var data = document.getElementById('addImgData'+i).value;
     if(data) images.push(data);
   }
-  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images,specs:collectSpecs('addSpec_')};
+  var p={id:Date.now(),cat:document.getElementById('addCat').value,name:document.getElementById('addName').value.trim(),spec:document.getElementById('addSpec').value.trim(),price:parseInt(document.getElementById('addPrice').value)||0,img:img,images:images,prices:collectPrices('addPrice_'),sortOrder:parseInt(document.getElementById('addSortOrder').value)||0,isHot:document.getElementById('addIsHot').value==='1',soldCount:parseInt(document.getElementById('addSoldCount').value)||0};
   if(!p.name||!p.price){alert('请填写商品名称和价格');return}
   PRODUCTS.push(p);saveProducts();closeModal();refreshMerchant();
 }
@@ -1830,7 +1883,8 @@ function editProduct(pid){
   h+='<input id="editSpec" value="'+p.spec.replace(/"/g,'&quot;')+'" placeholder="规格描述（支持详细多行说明）">';
   h+='<input id="editPrice" type="number" value="'+p.price+'">';
   h+='<input id="editImg" value="'+(p.img||'')+'" placeholder="图标 emoji">';
-  h+=buildSpecEditor('editSpec_',p.specs||[]);
+  h+=buildPriceTiers('editPrice_',p.prices||[]);
+  h+=buildSortHotSold('edit_',p.sortOrder||0,p.isHot||false,p.soldCount||0);
   h+=makeImageFieldsHTML(p.images||[], 'editImg');
   h+='<button class="btn" onclick="doEditProduct('+pid+')">保存修改</button>';
   document.getElementById('modalContent').innerHTML=h;
@@ -1848,7 +1902,10 @@ function doEditProduct(pid){
     if(data) images.push(data);
   }
   p.images = images;
-  p.specs = collectSpecs('editSpec_');
+  p.prices = collectPrices('editPrice_');
+  p.sortOrder = parseInt(document.getElementById('editSortOrder').value)||0;
+  p.isHot = document.getElementById('editIsHot').value==='1';
+  p.soldCount = parseInt(document.getElementById('editSoldCount').value)||0;
   saveProducts();closeModal();refreshMerchant();
 }
 

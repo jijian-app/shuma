@@ -118,11 +118,20 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 /* Spec Editor */
 .spec-editor{margin:10px 0;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px}
 .spec-editor .se-title{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;letter-spacing:1px}
-.spec-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
-.spec-row input{flex:1;margin:0!important;font-size:13px;padding:8px 10px}
-.spec-row input.spec-name{flex:0 0 80px}
-.spec-row .del-spec{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;line-height:26px;text-align:center;padding:0;flex-shrink:0}
-.spec-row .del-spec:active{background:rgba(255,60,60,.2);border-color:rgba(255,60,60,.4)}
+.spec-group{border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px;margin-bottom:10px}
+.spec-group .sg-header{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.spec-group .sg-header input.spec-name{flex:1;margin:0!important;font-size:13px;padding:8px 10px}
+.spec-group .sg-header .del-spec{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;line-height:26px;text-align:center;padding:0;flex-shrink:0}
+.spec-group .sg-header .del-spec:active{background:rgba(255,60,60,.2);border-color:rgba(255,60,60,.4)}
+.spec-opt-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.spec-opt-row input{margin:0!important;font-size:13px;padding:7px 10px}
+.spec-opt-row input.opt-name{flex:2}
+.spec-opt-row input.opt-price{flex:1;max-width:90px}
+.spec-opt-row .del-opt{width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.3);font-size:14px;cursor:pointer;line-height:22px;text-align:center;padding:0;flex-shrink:0}
+.spec-opt-row .del-opt:active{background:rgba(255,60,60,.15);border-color:rgba(255,60,60,.3)}
+.add-opt-btn{display:block;width:100%;padding:6px;border:1px dashed rgba(255,255,255,.1);border-radius:6px;background:transparent;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;margin-top:4px;transition:.2s}
+.add-opt-btn:active{background:rgba(255,255,255,.03);color:rgba(255,255,255,.6)}
+.add-opt-btn:disabled{opacity:.25;cursor:default}
 .add-spec-btn{display:block;width:100%;padding:8px;border:1px dashed rgba(255,255,255,.15);border-radius:8px;background:transparent;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:4px;transition:.2s}
 .add-spec-btn:active{background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
 .add-spec-btn:disabled{opacity:.3;cursor:default}
@@ -1647,85 +1656,134 @@ function clearImg(index, prefix){
 
 function buildSpecEditor(prefix, specs){
   specs = specs || [];
-  var h = '<div class="spec-editor"><div class="se-title">📐 规格管理（最多5组，格式：选项=价格，如 黑色=399、白色=429）</div>';
+  var h = '<div class="spec-editor"><div class="se-title">📐 规格管理（最多5组，每组最多5个选项，独立定价）</div>';
   h += '<div id="'+prefix+'container">';
   specs.forEach(function(s,i){
-    h += specRowHTML(prefix, i, s.name||'', s.options||[]);
+    h += specGroupHTML(prefix, i, s.name||'', s.options||[]);
   });
   h += '</div>';
-  h += '<button class="add-spec-btn" id="'+prefix+'addBtn" onclick="addSpecRow(\''+prefix+'\')"';
+  h += '<button class="add-spec-btn" id="'+prefix+'addBtn" onclick="addSpecGroup(\''+prefix+'\')"';
   if(specs.length>=5) h += ' disabled';
   h += '>+ 添加规格组 ('+specs.length+'/5)</button></div>';
   return h;
 }
-function specRowHTML(prefix, i, name, opts){
-  var optsDisplay = '';
-  if(opts && opts.length){
-    optsDisplay = opts.map(function(o){return o.name+(o.price?'='+o.price:'')}).join('、');
-  }
-  return '<div class="spec-row" id="'+prefix+'row'+i+'">'+
-    '<input class="spec-name" id="'+prefix+'name'+i+'" value="'+name.replace(/"/g,'&quot;')+'" placeholder="规格名">'+
-    '<input id="'+prefix+'opts'+i+'" value="'+optsDisplay.replace(/"/g,'&quot;')+'" placeholder="选项=价格（如：黑色=399、白色=429）">'+
-    '<button class="del-spec" onclick="delSpecRow(\''+prefix+'\','+i+')">×</button></div>';
+function specGroupHTML(prefix, gi, name, opts){
+  var h = '<div class="spec-group" id="'+prefix+'group'+gi+'">';
+  h += '<div class="sg-header">';
+  h += '<input class="spec-name" id="'+prefix+'gname'+gi+'" value="'+name.replace(/"/g,'&quot;')+'" placeholder="规格名（如：颜色、存储）">';
+  h += '<button class="del-spec" onclick="delSpecGroup(\''+prefix+'\','+gi+')">×</button>';
+  h += '</div>';
+  h += '<div class="spec-opts" id="'+prefix+'opts'+gi+'">';
+  (opts||[]).forEach(function(o,oi){
+    h += optRowHTML(prefix, gi, oi, o.name||'', o.price||0);
+  });
+  h += '</div>';
+  var cnt = (opts||[]).length;
+  h += '<button class="add-opt-btn" id="'+prefix+'addOpt'+gi+'" onclick="addOptRow(\''+prefix+'\','+gi+')"';
+  if(cnt>=5) h += ' disabled';
+  h += '>+ 添加选项 ('+cnt+'/5)</button>';
+  h += '</div>';
+  return h;
 }
-function addSpecRow(prefix){
+function optRowHTML(prefix, gi, oi, name, price){
+  return '<div class="spec-opt-row" id="'+prefix+'opt'+gi+'_'+oi+'">'+
+    '<input class="opt-name" id="'+prefix+'oname'+gi+'_'+oi+'" value="'+name.replace(/"/g,'&quot;')+'" placeholder="选项名（如：黑色）">'+
+    '<input class="opt-price" id="'+prefix+'oprice'+gi+'_'+oi+'" type="number" value="'+(price||'')+'" placeholder="价格">'+
+    '<button class="del-opt" onclick="delOptRow(\''+prefix+'\','+gi+','+oi+')">×</button></div>';
+}
+function addSpecGroup(prefix){
   var container = document.getElementById(prefix+'container');
-  var count = container.querySelectorAll('.spec-row').length;
+  var count = container.querySelectorAll('.spec-group').length;
   if(count>=5) return;
   var div = document.createElement('div');
-  div.innerHTML = specRowHTML(prefix, count, '', '');
+  div.innerHTML = specGroupHTML(prefix, count, '', []);
   container.appendChild(div.firstElementChild);
   updateSpecBtn(prefix);
 }
-function delSpecRow(prefix, i){
-  var row = document.getElementById(prefix+'row'+i);
-  if(row) row.remove();
-  reindexSpecRows(prefix);
+function delSpecGroup(prefix, gi){
+  var group = document.getElementById(prefix+'group'+gi);
+  if(group) group.remove();
+  reindexSpecGroups(prefix);
   updateSpecBtn(prefix);
 }
-function reindexSpecRows(prefix){
+function reindexSpecGroups(prefix){
   var container = document.getElementById(prefix+'container');
-  var rows = container.querySelectorAll('.spec-row');
-  rows.forEach(function(row, idx){
-    row.id = prefix+'row'+idx;
-    var nameInput = row.querySelector('.spec-name');
-    var optsInput = row.querySelectorAll('input')[1];
-    var delBtn = row.querySelector('.del-spec');
-    if(nameInput) nameInput.id = prefix+'name'+idx;
-    if(optsInput) optsInput.id = prefix+'opts'+idx;
-    if(delBtn) delBtn.setAttribute('onclick', "delSpecRow('"+prefix+"',"+idx+")");
+  var groups = container.querySelectorAll('.spec-group');
+  groups.forEach(function(g, idx){
+    g.id = prefix+'group'+idx;
+    var nameInp = g.querySelector('.spec-name');
+    if(nameInp) nameInp.id = prefix+'gname'+idx;
+    var delBtn = g.querySelector('.del-spec');
+    if(delBtn) delBtn.setAttribute('onclick', "delSpecGroup('"+prefix+"',"+idx+")");
+    var opts = g.querySelector('.spec-opts');
+    if(opts) opts.id = prefix+'opts'+idx;
+    var addBtn = g.querySelector('.add-opt-btn');
+    if(addBtn){ addBtn.id = prefix+'addOpt'+idx; addBtn.setAttribute('onclick', "addOptRow('"+prefix+"',"+idx+")"); }
+    g.querySelectorAll('.spec-opt-row').forEach(function(orow, oi){
+      orow.id = prefix+'opt'+idx+'_'+oi;
+      var oname = orow.querySelector('.opt-name'); if(oname) oname.id = prefix+'oname'+idx+'_'+oi;
+      var oprice = orow.querySelector('.opt-price'); if(oprice) oprice.id = prefix+'oprice'+idx+'_'+oi;
+      var odel = orow.querySelector('.del-opt'); if(odel) odel.setAttribute('onclick', "delOptRow('"+prefix+"',"+idx+","+oi+")");
+    });
+    updateOptBtn(prefix, idx);
   });
+}
+function addOptRow(prefix, gi){
+  var optsCont = document.getElementById(prefix+'opts'+gi);
+  if(!optsCont) return;
+  var count = optsCont.querySelectorAll('.spec-opt-row').length;
+  if(count>=5) return;
+  var div = document.createElement('div');
+  div.innerHTML = optRowHTML(prefix, gi, count, '', 0);
+  optsCont.appendChild(div.firstElementChild);
+  updateOptBtn(prefix, gi);
+}
+function delOptRow(prefix, gi, oi){
+  var row = document.getElementById(prefix+'opt'+gi+'_'+oi);
+  if(row) row.remove();
+  reindexOptsInGroup(prefix, gi);
+  updateOptBtn(prefix, gi);
+}
+function reindexOptsInGroup(prefix, gi){
+  var optsCont = document.getElementById(prefix+'opts'+gi);
+  if(!optsCont) return;
+  optsCont.querySelectorAll('.spec-opt-row').forEach(function(row, oi){
+    row.id = prefix+'opt'+gi+'_'+oi;
+    var oname = row.querySelector('.opt-name'); if(oname) oname.id = prefix+'oname'+gi+'_'+oi;
+    var oprice = row.querySelector('.opt-price'); if(oprice) oprice.id = prefix+'oprice'+gi+'_'+oi;
+    var odel = row.querySelector('.del-opt'); if(odel) odel.setAttribute('onclick', "delOptRow('"+prefix+"',"+gi+","+oi+")");
+  });
+}
+function updateOptBtn(prefix, gi){
+  var optsCont = document.getElementById(prefix+'opts'+gi);
+  if(!optsCont) return;
+  var count = optsCont.querySelectorAll('.spec-opt-row').length;
+  var btn = document.getElementById(prefix+'addOpt'+gi);
+  if(btn){ btn.disabled = count>=5; btn.textContent = '+ 添加选项 ('+count+'/5)'; }
 }
 function updateSpecBtn(prefix){
   var container = document.getElementById(prefix+'container');
-  var count = container.querySelectorAll('.spec-row').length;
+  var count = container.querySelectorAll('.spec-group').length;
   var btn = document.getElementById(prefix+'addBtn');
-  if(btn){
-    btn.disabled = count>=5;
-    btn.textContent = '+ 添加规格组 ('+count+'/5)';
-  }
+  if(btn){ btn.disabled = count>=5; btn.textContent = '+ 添加规格组 ('+count+'/5)'; }
 }
 function collectSpecs(prefix){
   var specs = [];
   var container = document.getElementById(prefix+'container');
   if(!container) return specs;
-  var rows = container.querySelectorAll('.spec-row');
-  rows.forEach(function(row, idx){
-    var nameInput = row.querySelector('.spec-name');
-    var optsInput = row.querySelectorAll('input')[1];
-    var name = (nameInput||{}).value||'';
-    var optsRaw = ((optsInput||{}).value||'').trim();
-    if(name && optsRaw){
-      var options = optsRaw.split(/[、,，]/).map(function(o){
-        o = o.trim();
-        var parts = o.split('=');
-        if(parts.length>=2 && parts[1] && !isNaN(parseInt(parts[1]))){
-          return {name:parts[0].trim(), price:parseInt(parts[1])};
-        }
-        return {name:o, price:0};
-      }).filter(function(o){return o.name});
-      if(options.length) specs.push({name:name, options:options});
+  container.querySelectorAll('.spec-group').forEach(function(group){
+    var nameInp = group.querySelector('.spec-name');
+    var name = (nameInp||{}).value||'';
+    var optsCont = group.querySelector('.spec-opts');
+    var options = [];
+    if(optsCont){
+      optsCont.querySelectorAll('.spec-opt-row').forEach(function(row){
+        var oname = (row.querySelector('.opt-name')||{}).value||'';
+        var oprice = parseInt((row.querySelector('.opt-price')||{}).value) || 0;
+        if(oname) options.push({name:oname, price:oprice});
+      });
     }
+    if(name && options.length) specs.push({name:name, options:options});
   });
   return specs;
 }

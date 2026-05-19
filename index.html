@@ -2060,7 +2060,7 @@ function doTracking(oid){
   saveOrders();refreshMerchant();renderOrders();
 }
 
-function openModal(){openModal();document.body.style.overflow='hidden'}
+function openModal(){document.getElementById('modal').style.display='flex';document.body.style.overflow='hidden'}
 function closeModal(){document.getElementById('modal').style.display='none';document.body.style.overflow=''}
 
 // ==== USER MANAGEMENT ====

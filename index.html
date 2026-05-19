@@ -45,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 /* Dots */
 .dots-bar{flex-shrink:0;padding:4px 0 12px;text-align:center}
 .page-labels{display:flex;justify-content:center;gap:0;margin-bottom:6px}
-.pl{width:33.33%;font-size:11px;color:rgba(255,255,255,.2);text-align:center;transition:color .3s;letter-spacing:1px}
+.pl{width:50%;font-size:11px;color:rgba(255,255,255,.2);text-align:center;transition:color .3s;letter-spacing:1px}
 .pl.on{color:rgba(255,255,255,.7)}
 .dots{display:flex;justify-content:center;gap:6px;padding:0}.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.15);transition:.3s}.dot.on{background:#e8e8ec;width:18px;border-radius:3px}
 
@@ -84,23 +84,6 @@ input:focus,select:focus{border-color:rgba(255,255,255,.25);background:rgba(255,
 .prod-card .buy-btn:active{background:#fff;color:#000}
 /* 3D glare */
 .prod-card .card-glare{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;border-radius:14px;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.08) 0%,transparent 60%)}
-
-/* AI Chat (简简导购) */
-.chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:12px;min-height:300px}
-.msg{display:flex;gap:8px;max-width:85%}
-.msg.pet{align-self:flex-start}.msg.mine{align-self:flex-end;flex-direction:row-reverse}
-.msg .face{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.06);flex-shrink:0;overflow:hidden}
-.msg.pet .face{background:#fff;border:1.5px solid #1a1a1a;position:relative}
-/* 猫耳朵 */
-.msg.pet .face::before{content:'';position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;left:6px;transform:rotate(-10deg)}
-.msg.pet .face::after{content:'';position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;right:6px;transform:rotate(10deg)}
-.msg .text{padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.6}
-.msg.pet .text{background:#1a1a0a;border:1px solid #332200;border-bottom-left-radius:4px}
-.msg.mine .text{background:#fff;color:#000;border-bottom-right-radius:4px}
-.chat-bar{display:flex;gap:8px;border-top:1px solid rgba(255,255,255,.06);padding-top:10px}
-.chat-bar input{flex:1;margin-bottom:0;padding:12px 16px;border-radius:22px}
-.chat-bar button{padding:12px 20px;border-radius:22px;border:none;background:#fff;color:#000;font-size:14px;font-weight:600;cursor:pointer}
-.chat-bar button:active{opacity:.7}
 
 /* Orders */
 .order-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1)}
@@ -263,13 +246,7 @@ select{appearance:none;-webkit-appearance:none}
         <div class="cat-grid" id="catGrid"></div>
         <div class="prod-list" id="prodList"></div>
       </div>
-      <!-- Page 2: AI Chat -->
-      <div class="page" style="display:flex;flex-direction:column">
-        <div style="margin-bottom:12px;font-size:15px;letter-spacing:2px;display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid #1a1a1a;display:inline-block;position:relative"><span style="position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;left:4px;transform:rotate(-10deg)"></span><span style="position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:8px solid #1a1a1a;top:-6px;right:4px;transform:rotate(10deg)"></span></span> 简简导购</div>
-        <div class="chat-box" id="aibox"><div class="msg pet"><div class="face"></div><div class="text">嗨！我是简简～ 数码城的小导购 🐾<br>告诉我你的预算和需求，帮你挑最合适的！<br>想看⌚手表的话直接说，我有华强北专属话术帮你避坑～</div></div></div>
-        <div class="chat-bar"><input id="aiin" placeholder="比如：3000以内的游戏手机 或 学生党手表推荐"><button id="aisend">发送</button></div>
-      </div>
-      <!-- Page 3: Account -->
+      <!-- Page 2: Account -->
       <div class="page">
         <div class="card" id="loginCard">
           <h3 style="text-align:center;letter-spacing:2px;font-weight:400;margin-bottom:14px">登录 / 注册</h3>
@@ -303,10 +280,10 @@ select{appearance:none;-webkit-appearance:none}
   </div>
   <div class="dots-bar">
     <div class="page-labels" id="clabels">
-      <span class="pl on" data-i="0">商品</span><span class="pl" data-i="1">AI导购</span><span class="pl" data-i="2">我</span>
+      <span class="pl on" data-i="0">商品</span><span class="pl" data-i="1">我</span>
     </div>
     <div class="dots" id="cdots">
-      <div class="dot on" data-i="0"></div><div class="dot" data-i="1"></div><div class="dot" data-i="2"></div>
+      <div class="dot on" data-i="0"></div><div class="dot" data-i="1"></div>
     </div>
   </div>
 </div>
@@ -854,8 +831,6 @@ function initCustomer(){
   currentUser=JSON.parse(localStorage.getItem('sc_currentUser')||'null');
   renderCats();renderProds('all');
   initSwipe('cwrapper','cpages','cdots');
-  document.getElementById('aisend').addEventListener('click',aiChat);
-  document.getElementById('aiin').addEventListener('keydown',function(e){if(e.key==='Enter')aiChat()});
   updateAccountUI();
   if(currentUser){savedToast('欢迎回来，'+currentUser.name)}
   // Event delegation: capture clicks on buy buttons and product cards
@@ -1091,143 +1066,6 @@ function savePaymentQRAlipay(){
     var prevA = document.getElementById('qrAlipayPreview'); if(prevA) prevA.innerHTML = '<img src="'+qrA+'" style="max-width:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1)">';
   }
 })();
-
-// ===== AI CHAT (简简导购) =====
-
-// ---- 华强北手表·群体话术系统 ----
-var watchSession=null;
-var user_type_keywords={student:['学生','高中生','初中','大学','宿舍','上课','学校','作业','考试','爸妈不给买','零花钱','生日礼物求爸妈','住校','离家'],young_worker:['刚上班','实习','打工人','通勤','开会','久坐','加班','健身房','跑步','运动','好看','颜值','搭配','穿搭','办公室','996'],tech_lover:['刷机','root','固件','处理器','传感器','分辨率','对比','拆机','评测','参数','性价比','配置','玩机','可玩性','定制'],lower_tier:['老人','爸妈','给爸','给妈','大字','大声','简单','耐用','摔不坏','基础','便宜就行','不花哨','实惠','乡下','老家'],gift_buyer:['送礼','送人','包装','面子','生日','节日','女朋友','男朋友','小孩','孩子','仪式感','开箱','高端','上档次']};
-var student_scripts={greeting:'同学你好！看你像是给学生党选手表的？我太懂了——预算不多但功能不能少，对吧？',price:['学生党我懂，100-300价位段能打电话+回微信+上课静音的款我有推荐','别一上来就看贵的，学生用300块以内的完全够','爸妈给多少预算？150左右能买到基础通话款，200-300能上微信款'],needs:{com:'住校需要独立通讯？选带eSIM或插卡版，脱离手机也能打电话',social:'微信QQ刚需？确认微信是完整版还是精简版，能不能语音转文字',school:'上课静音+课程表导入+考试断网模式必须有，不会被老师收走',battery:'住校充电不便？选400mAh以上电池，实际能撑2天'},pain:{quality:'学生用表容易磕碰，选金属中框+康宁玻璃面板，塑料壳一摔就裂',fake:'收到货下AIDA64验配置，参数对不上7天无理由退',compat:'iPhone用户注意！部分款iOS只能用基础功能，买前确认兼容性'},closing:['学生党这款最值：通话+微信+上课静音全有，300以内最优解','记住：收到先验配置再贴膜，7天内有问题直接退']};
-var young_worker_scripts={greeting:'打工人你好！想找一块上班能戴、运动能用的表？既要实用又要好看，我懂~',price:['职场用200-500最合适，低于200质感差，超500不如加钱上品牌','通勤+运动+日常，300块左右能搞定。你主要想用在哪？'],needs:{health:'久坐提醒+心率监测是职场刚需！加班时它会提醒你站起来走走',sport:'跑步游泳？确认防水等级——IP68只能溅水，5ATM才能游泳',notify:'开会不方便看手机？消息提醒要能看完整内容+快捷回复',look:'上班戴的表得有质感，选金属表带或简约硅胶款'},pain:{battery:'不想天天充电？400mAh以上电池，开全天心率能撑两天',lag:'用几个月卡？运存低于1G必卡，买时确认运存≥1G+系统更新支持',compat:'iPhone用户要特别留意！iOS限制多，买前问清楚支持哪些功能'},closing:['职场选表公式：消息提醒好+续航≥2天+外观简约=不踩雷','先买基础款试一个月，真需要再升级，别上来买顶配用不上浪费']};
-var tech_lover_scripts={greeting:'老玩家来了？华强北手表水很深但也很好玩，我来帮你避坑找宝！',price:['玩机党花300-600最合理，太便宜没啥可玩的，太贵不如上品牌','别只看价格，看开放度。有些300块的比500块可玩性高10倍'],needs:{spec:'参数党直接看：芯片+运存+存储+屏幕。1G+8G起步，AMOLED>IPS',flash:'想刷机？确认：Bootloader解锁+第三方固件活跃+有无变砖风险',custom:'自定义表盘是灵魂！选支持表盘DIY的款，表盘小组件随便换',value:'性价比公式：价格÷(运存×存储×屏幕等级)=真性价比'},pain:{fake:'虚标是常态，AIDA64看真实芯片，安兔兔跑分对比同芯片标准分',community:'买表先看社区活跃度！论坛没帖子、固件半年不更新的别买',brick:'刷机有风险？确认有官方固件包可恢复，社区有大神做一键恢复才放心刷'},closing:['玩机党这款：芯片开放+社区活跃+固件持续更新，性价比同价位第一','收到先别急着刷，原厂系统用3天验硬件没问题再折腾']};
-var lower_tier_scripts={greeting:'给爸妈选表还是自己用？简单实用就好，我帮你找最省心的款！',price:['不用买贵的，100-300完全够。爸妈用图个能打电话+大声音','实用派选表原则：基础功能稳+电池大+声音响，200块以内搞定'],needs:{basic:'核心就3个：看时间准、打电话响、按键大好操作',sound:'大音量是刚需！扬声器功率≥1W，很多便宜款声音小得听不见',simple:'操作要简单！字大、图标大、按键大，别选触屏手势多的款'},pain:{quality:'便宜货容易坏？选金属中框的，比塑料耐摔3倍',battery:'老人不会天天充电？500mAh以上大电池，只来电提醒能撑5-7天',after:'小品牌坏了没地方修？选有全国联保的，至少1年质保'},closing:['给爸妈这款：大字大声大电池，操作就3步，充一次用5天','我帮你选了最省心的，收到帮爸妈设好常用联系人就行']};
-var gift_buyer_scripts={greeting:'送人啊？我帮你挑！送礼讲究3个字：好看、有面、不出错~',price:['送礼200-500最得体，有礼盒包装开箱有仪式感','送谁？女朋友选时尚款、送小孩选功能多酷炫的、送长辈选大字大气款'],needs:{packaging:'送礼第一印象靠包装！选有礼盒套装的款：精装盒+备用表带+贴膜',face:'收礼的人觉得值最重要，选简约设计，别选一看就是地摊货的塑料感',universal:'不知道对方喜好？选百搭款：黑/银金属机身+简约表盘，谁戴都合适'},pain:{disappoint:'最怕送了对方不用？选功能普适的——消息提醒+运动+看时间，谁都用得上',quality:'送的东西坏了很丢面子！选1年质保的，出问题直接换新',size:'表带尺寸注意！选可调节范围大的（手腕14-22cm都能戴）'},closing:['送礼这款最稳：金属机身+简约设计+礼盒包装，谁收到都觉得有档次','放心送！颜值高功能全有包装，7天有问题包退']};
-var general_pain={battery:{intro:'续航焦虑？看实际续航别看宣传，400mAh以上+关5G用4G多30%',tip:'省电技巧：亮度40%、关抬腕亮屏、不运动关GPS，续航多1-2天'},quality:{intro:'华强北质量参差是事实，但不是不能买',tip:'收到先验：AIDA64查配置+屏幕按压无水波纹+按键回弹干脆+充电口不松动'},lag:{intro:'用久了卡？买时注意运存≥1G+系统持续更新+自启动管理',tip:'到手做3件事：关不常用自启动、限制后台进程、每周重启一次'},aftersale:{intro:'售后是华强北最大的坑',tip:'买前确认：1年以上质保+售后网点覆盖+退换条款写进订单备注。碎屏险一年30-50块'}};
-function matchUserType(t){var s={};for(var type in user_type_keywords){s[type]=0;user_type_keywords[type].forEach(function(k){if(t.indexOf(k)>=0)s[type]++})}var best='student',max=0;for(var tt in s){if(s[tt]>max){max=s[tt];best=tt}}return max>0?best:null}
-function getScriptForType(type){var m={student:student_scripts,young_worker:young_worker_scripts,tech_lover:tech_lover_scripts,lower_tier:lower_tier_scripts,gift_buyer:gift_buyer_scripts};return m[type]||student_scripts}
-
-function watchReply(t){
-  var type=matchUserType(t)||'student';
-  var sc=getScriptForType(type);
-  var isNew=!watchSession||watchSession.type!==type;
-  if(isNew){watchSession={type:type,step:0}}
-  watchSession.step=(watchSession.step||0)+1;
-  var step=watchSession.step;
-  
-  var prods=searchProds(t,['wearable']);
-  var prodBlock=prods.length?('\n\n'+formatProds(prods,'🛒 平台穿戴现货：')):'';
-  
-  if(isNew||step===1){
-    var r=sc.greeting+'\n\n';
-    r+=sc.price[Math.floor(Math.random()*sc.price.length)];
-    var ks=Object.keys(sc.needs);r+='\n\n💡 '+sc.needs[ks[Math.floor(Math.random()*ks.length)]];
-    if(prods.length){r+='\n\n'+formatProds(prods,'🛒 平台穿戴现货：')}
-    return r;
-  }
-  
-  var t1=t.toLowerCase();
-  if(/价格|多少钱|预算|便宜|贵|价位/.test(t1)){var r1=sc.price[Math.floor(Math.random()*sc.price.length)];if(prods.length)r1+=prodBlock;return r1}
-  if(/续航|电池|充电/.test(t1)){return general_pain.battery.intro+'\n\n'+general_pain.battery.tip}
-  if(/卡|慢|卡顿|发热/.test(t1)){return general_pain.lag.intro+'\n\n'+general_pain.lag.tip}
-  if(/质量|靠谱|真的假的|坑|骗/.test(t1)){return general_pain.quality.intro+'\n\n'+general_pain.quality.tip}
-  if(/售后|保修|坏了|维修/.test(t1)){return general_pain.aftersale.intro+'\n\n'+general_pain.aftersale.tip}
-  if(/推荐|哪款|选哪个|对比|求推/.test(t1)){
-    var cls=sc.closing[Math.floor(Math.random()*sc.closing.length)];
-    if(prods.length)cls+=prodBlock;
-    return cls;
-  }
-  if(/静音|上课|考试|学校/.test(t1)){var r2=sc.needs.school||sc.needs.com;if(prods.length)r2+=prodBlock;return r2}
-  if(/微信|qq|消息|通知/.test(t1)){var r3=sc.needs.social||sc.needs.notify;if(prods.length)r3+=prodBlock;return r3}
-  if(/运动|跑步|游泳|健身/.test(t1)){var r4=sc.needs.sport||sc.needs.health;if(prods.length)r4+=prodBlock;return r4}
-  if(/刷机|固件|root|可玩|社区/.test(t1)){var r5=sc.needs.flash||sc.needs.custom;if(prods.length)r5+=prodBlock;return r5}
-  if(/送|礼|包装|面子/.test(t1)){var r6=sc.needs.packaging||sc.needs.face;if(prods.length)r6+=prodBlock;return r6}
-  if(/老人|爸妈|长辈|大字/.test(t1)){var r7=sc.needs.basic||sc.needs.sound;if(prods.length)r7+=prodBlock;return r7}
-  
-  var ks=Object.keys(sc.needs);
-  var r8=sc.needs[ks[Math.floor(Math.random()*ks.length)]]+'\n\n'+sc.closing[Math.floor(Math.random()*sc.closing.length)];
-  if(prods.length)r8+=prodBlock;
-  return r8;
-}
-
-// ---- 商品实时检索引擎 ----
-function extractBudget(t){var m=t.match(/(\d+)\s*(块|元|k|千|万|百|以内)/);if(!m)return 0;var b=parseInt(m[1]);if(m[2]==='k'||m[2]==='千')b*=1000;if(m[2]==='万')b*=10000;return b}
-function searchProds(t,catFilter){
-  var budget=extractBudget(t);var cats=catFilter||[];
-  if(!cats.length){
-    var cm={'手机':'smartphone','笔记本':'laptop','平板':'tablet','耳机':'earphone','手表':'wearable','手环':'wearable','穿戴':'wearable','配件':'accessory'};
-    Object.keys(cm).forEach(function(k){if(t.indexOf(k)>=0)cats.push(cm[k])});
-    if(!cats.length)cats.push('smartphone');
-  }
-  var prods=PRODUCTS.filter(function(p){return cats.indexOf(p.cat)>=0});
-  if(budget>0)prods=prods.filter(function(p){return p.price<=budget*1.3});
-  prods.sort(function(a,b){return a.price-b.price});
-  return prods;
-}
-function smartTag(p,all){
-  if(!all.length)return'';
-  if(p.price===all[0].price)return'💰 性价比首选';
-  if(p.price===all[all.length-1].price&&all.length>1)return'👑 旗舰之选';
-  if(p.cat==='smartphone'&&p.price<3000)return'🎯 入门优选';
-  if(p.cat==='smartphone'&&p.price<5000)return'⭐ 中端主力';
-  if(p.cat==='laptop'&&p.price<7000)return'💻 轻薄办公';
-  if(p.cat==='wearable'&&p.price<500)return'🏃 运动搭档';
-  if(p.cat==='wearable'&&p.price>2000)return'🍎 生态首选';
-  if(p.cat==='earphone'&&p.price<500)return'🎵 入门好声';
-  if(p.cat==='earphone'&&p.price>1500)return'🎧 降噪旗舰';
-  return'';
-}
-function formatProds(prods,greeting){
-  if(!prods.length)return'';
-  var r=greeting||'🛒 平台现货，按价格排序：';
-  r+='\n\n';
-  var tags=prods.map(function(p,i){return smartTag(p,prods)});
-  prods.forEach(function(p,i){
-    r+=p.img+'  **'+p.name+'**  ¥'+p.price.toLocaleString();
-    if(tags[i])r+='  '+tags[i];
-    r+='\n   '+p.spec+'\n\n';
-  });
-  return r;
-}
-// ---- 检索引擎结束 ----
-
-function aiChat(){
-  var inp=document.getElementById('aiin');
-  var t=inp.value.trim();if(!t)return;
-  addAIMsg(t,'mine');inp.value='';
-  setTimeout(function(){addAIMsg(aiReply(t),'pet')},600+Math.random()*800);
-}
-
-function addAIMsg(t,who){
-  var d=document.createElement('div');d.className='msg '+who;
-  var faceHtml = who==='pet' ? '<div class="face"></div>' : '<div class="face">😊</div>';
-  d.innerHTML=faceHtml+'<div class="text">'+t.replace(/\n/g,'<br>')+'</div>';
-  document.getElementById('aibox').appendChild(d);
-  document.getElementById('aibox').scrollTop=document.getElementById('aibox').scrollHeight;
-}
-
-function aiReply(t){
-  var t1=t.toLowerCase();
-  // 检测手表/穿戴 → 触发华强北话术
-  var watchKws=['手表','手环','穿戴','智能表','watch','⌚','华强北'];
-  if(watchKws.some(function(k){return t1.indexOf(k)>=0})){
-    return watchReply(t1);
-  }
-
-  // 智能商品搜索（实时读取PRODUCTS数据）
-  var prods=searchProds(t1);
-  prods=prods.slice(0,4);
-
-  if(!prods.length)return '唔...没找到合适的呢 😔\n试试放宽预算，或者换个说法～我在这里等你！';
-
-  var greetings=['找到啦！给你挑了这几款～','来看看这些～都是我精选的！','喏，这些很适合你！','帮你筛了这几款好物：'];
-  var g=greetings[Math.floor(Math.random()*greetings.length)];
-  var rep=formatProds(prods,g);
-  if(prods.length===1){rep+='👆 目前平台这个品类就这一款，品质有保障～';}
-  else if(prods[0].price<2000){rep+='💡 预算有限的话，第一款性价比最高！';}
-  else{rep+='💡 按价格从低到高排列，选中间那款最均衡～';}
-  rep+='\n\n💛 点商品卡片可以直接下单哦～有问题随时问我！';
-  return rep;
-}
 
 // ===== ACCOUNT =====
 function doLogin(){
@@ -1570,7 +1408,7 @@ function closeProdDetail(){
 
 // ===== SWIPE =====
 function initSwipe(wrapperId,pagesId,dotsId){
-  var cur=0,total=3,sx=0,sy=0,swiping=false,moved=false;
+  var cur=0,total=2,sx=0,sy=0,swiping=false,moved=false;
   var w=document.getElementById(wrapperId),p=document.getElementById(pagesId),dots=document.querySelectorAll('#'+dotsId+' .dot');
   var labelsId=dotsId.replace('dots','labels'),labels=document.querySelectorAll('#'+labelsId+' .pl');
 
